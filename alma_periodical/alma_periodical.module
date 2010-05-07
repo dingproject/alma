@@ -1,0 +1,58 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Alma module to help handle periodicals from Ting.
+ */
+
+/**
+ * Implementation of hook_theme().
+ */
+function alma_periodical_theme() {
+  return array(
+    'ting_periodical' => array(
+      'arguments' => array('object' => NULL),
+      'template' => 'ting_periodical',
+    ),
+  );
+}
+
+/**
+ * Preprocessor for the ting_periodical template.
+ */
+function template_preprocess_ting_periodical(&$variables) {
+  jquery_ui_add('ui.dialog');
+  jquery_ui_theme_load();
+  drupal_add_js(drupal_get_path('module', 'alma_cart') . '/alma_cart.buttons.js');
+  drupal_add_js(drupal_get_path('module', 'alma_periodical') . '/alma.periodical.js');
+  $variables['title'] = check_plain($variables['object']->title);
+  $data = alma_client_catalogue_record_detail($variables['object']->localId);
+  $details = $data['records'][$variables['object']->localId];
+
+  foreach ($details['issues'] as $year => $issue_list) {
+    $items = array();
+
+    // Special case for when there’s only one issue per year.
+    if (count($issue_list) == 1) {
+      $issue = array_shift($issue_list);
+      $variables['issues'][$year] = theme('item_list', array(
+        l(t('Reserve now'), 'alma/cart/reserve/' . $details['alma_id'] . '/' . $issue['reservable'], array('attributes' => array('class' => 'reserve-now'))),
+      ), $year, 'ul', array('class' => 'buttons alma-cart-buttons'));
+    }
+    else {
+      foreach ($issue_list as $issue_name => $issue) {
+        $output = '<div class="title">' . $issue_name . '</div>';
+        $output .= theme('item_list', array(
+          l(t('Reserve now'), 'alma/cart/reserve/' . $details['alma_id'] . '/' . $issue['reservable'], array('attributes' => array('class' => 'reserve-now'))),
+          //l(t('Add to cart'), 'alma/cart/add/'  . $issue['reservable'], array('attributes' => array('class' => 'add-to-cart'))),
+        ), NULL, 'ul', array('class' => 'buttons alma-cart-buttons'));
+
+        $items[] = $output;
+      }
+
+      $variables['issues'][$year] = theme('item_list', $items, $year);
+    }
+  }
+}
+

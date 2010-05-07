@@ -1,0 +1,124 @@
+<?php
+// $Id$
+
+/**
+ * @file alma_user.install
+ * Installation and upgrade hooks for the alma_user module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function alma_user_install() {
+  drupal_install_schema('alma_user');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function alma_user_uninstall() {
+  drupal_uninstall_schema('alma_user');
+  variable_del('alma_user_credential_cache_duration');
+  variable_del('alma_user_pin_length');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function alma_user_schema() {
+  $schema = array();
+
+  $schema['alma_user'] = array(
+    'description' => t('Keep track of the information tying Drupal users to Alma patrons.'),
+    'fields' => array(
+      'uid' => array(
+        'description' => '{users}.uid for user',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'alma_id' => array(
+        'description' => 'Alma ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'alma_name' => array(
+        'description' => 'User’s real name from Alma',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'preferred_branch' => array(
+        'description' => '{ding_library}.branch_id for user’s preferred branch.',
+        'type' => 'varchar',
+        'length' => 50,
+      ),
+      'interest_period' => array(
+        'description' => 'Default number of days that a user is willing to wait for a reservation.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'small',
+      ),
+    ),
+    'primary key' => array('uid'),
+    'unique keys' => array(
+      'borr_card' => array('alma_id')
+    ),
+  );
+
+  $schema['cache_alma_credentials'] = drupal_get_schema_unprocessed('system', 'cache');
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add the preferred branch column to alma_user.
+ */
+function alma_user_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'alma_user', 'preferred_branch', array('type' => 'varchar', 'length' => 50));
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add a new cache table for Alma user status.
+ */
+function alma_user_update_6002() {
+  $ret = array();
+  db_create_table($ret, 'cache_alma_status', drupal_get_schema_unprocessed('system', 'cache'));
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Drop alma_name.
+ */
+function alma_user_update_6003() {
+  $ret = array();
+
+  db_drop_field($ret, 'alma_user', 'alma_name');
+
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add interest_period.
+ */
+function alma_user_update_6004() {
+  $ret = array();
+  db_add_field($ret, 'alma_user', 'interest_period', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'size' => 'small',
+  ));
+  return $ret;
+}
+

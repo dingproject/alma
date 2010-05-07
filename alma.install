@@ -1,0 +1,39 @@
+<?php
+// $Id$
+
+/**
+ * @file alma.install
+ * Installation and upgrade hooks for the alma module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function alma_install() {
+  drupal_install_schema('alma');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function alma_uninstall() {
+  drupal_uninstall_schema('alma');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function alma_schema() {
+  $schema = array();
+  $schema['cache_alma_requests'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function alma_update_6000() {
+  // Since we did not previously have a schema, install it.
+  return drupal_install_schema('alma');
+}
+

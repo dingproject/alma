@@ -1,0 +1,717 @@
+<?php
+// $Id$
+
+// Default interest period is ~six months.
+define('ALMA_USER_DEFAULT_INTEREST_PERIOD', 183);
+
+/**
+ * Implementation of hook_menu().
+ */
+function alma_user_menu() {
+  $items = array();
+
+  $items['admin/settings/alma/user'] = array(
+    'title' => 'User settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('alma_user_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'alma_user.admin.inc',
+  );
+
+  $items['user/%user/authenticate'] = array(
+    'title' => 'Please authenticate',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('alma_user_forms_alma_authenticate', 1),
+    'access callback' => 'alma_user_forms_access',
+    'access arguments' => array('alma_authenticate', 1),
+    'type' => MENU_CALLBACK,
+    'file' => 'alma_user.forms.inc',
+  );
+
+  $items['user/%user/change_pin'] = array(
+    'title' => 'Change pin code',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('alma_user_forms_change_pin', 1),
+    'access callback' => 'alma_user_forms_access',
+    'access arguments' => array('change_pin', 1),
+    'type' => MENU_CALLBACK,
+    'file' => 'alma_user.forms.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function alma_user_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    return array(
+      'account' => array(
+        'info' => t('Library account/login'),
+        'cache' => BLOCK_NO_CACHE,
+        'status' => 1,
+        'region' => 'account',
+      ),
+    );
+  }
+  elseif ($op == 'view' && $delta == 'account') {
+    global $user;
+    $block = array();
+
+    // If user is not logged in, display the login form.
+    if (!$user->uid) {
+      jquery_ui_add('ui.dialog');
+      jquery_ui_theme_load();
+      drupal_add_js(drupal_get_path('module', 'alma_user') . '/alma_user.login.js');
+      $block['content'] = drupal_get_form('user_login_block');
+    }
+    else {
+      $status = alma_user_get_status($GLOBALS['user'], FALSE);
+      $block['content'] = theme('alma_user_status_block', $status);
+    }
+
+    return $block;
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function alma_user_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'load':
+      if ($account->uid) {
+        // Attach the Alma user id and name to the user object when it
+        // is loaded, so it's available everywhere the user is.
+        $data = db_fetch_array(db_query("SELECT * FROM {alma_user} WHERE uid = %d LIMIT 1;", $account->uid));
+        $account->alma_id = $data['alma_id'];
+        $account->preferred_branch = $data['preferred_branch'];
+        $account->interest_period = $data['interest_period'];
+      }
+      break;
+    case 'delete':
+      db_query('DELETE FROM {alma_user} WHERE uid=%d', $account->uid);
+      // Tricky: No break, delete also performs the same actions as logout.
+    case 'logout':
+      cache_clear_all(alma_user_get_cache_key($account), 'cache_alma_credentials');
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function alma_user_init() {
+  global $user;
+  $edit = array();
+
+  // Fire our own hook_user to have the Alma data available on the
+  // global $user object.
+  if ($user->uid > 1) {
+    alma_user_user('load', $edit, $user);
+  }
+}
+
+/**
+ * Implementation of hook_flush_caches().
+ */
+function alma_user_flush_caches() {
+  return array('cache_alma_credentials');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function alma_user_theme($existing, $type, $theme, $path) {
+  return array(
+    'alma_user_status_block' => array(
+      'arguments' => array(
+        'user_status' => NULL,
+      ),
+      'template' => 'alma_user_status_block',
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_personal_info' => array(
+      'arguments' => array(
+        'account' => NULL,
+        'alma_data' => NULL,
+      ),
+      'template' => 'alma_user_personal_info',
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_record_list' => array(
+      'arguments' => array(
+        'records' => array(),
+      ),
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_forms_reservation_details' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_forms_loan_details' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_forms_debts_details' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'alma_user.theme.inc',
+    ),
+    'alma_user_list_item' => array(
+      'arguments' => array('item' => NULL),
+      'file' => 'alma_user.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function alma_user_ctools_plugin_api($module, $api) {
+  if ($module == 'page_manager' && $api == 'pages_default') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ *
+ * Tells CTools (and thus Panels) where to look for plugin code.
+ */
+function alma_user_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' || $module == 'panels') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * Alter the login form to disable the standard Drupal username/password
+ * combination and provide our own fields instead.
+ */
+function alma_user_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_login':
+    case 'user_login_block':
+      // Since the login name can be a user's CPR-number, that too is hidden.
+      $form['name']['#type'] = 'password';
+
+      // Add our own validation and submit handlers.
+      array_unshift($form['#validate'], 'alma_user_login_validate');
+      $form['#submit'][] = 'alma_user_login_submit';
+
+      // Remove the standard user login links.
+      unset($form['links']);
+      break;
+    case 'user_profile_form':
+      $account = $form['_account']['#value'];
+      $creds = alma_user_get_credentials($account);
+
+      // When we have credentials available, make library patron
+      // information available for altering.
+      if (is_array($creds) && !empty($creds)) {
+        $patron = alma_client_get_patron_info($creds['borr_card'], $creds['pin_code'], TRUE);
+
+        // Store the patron information for validation purposes.
+        $form['alma_user_patron_info'] = array(
+          '#type' => 'value',
+          '#value' => $patron,
+        );
+
+        // Copy the standard mail field, hide it and use the new
+        // alma_mail field to edit the e-mail-address registered in Alma.
+        $form['account']['alma_mail'] = $form['account']['mail'];
+        $form['account']['mail']['#type'] = 'value';
+
+        // Use the e-mail-address from Alma as the default value for our
+        // new e-mail-address field.
+        if (isset($patron['mails'][0])) {
+          $form['account']['alma_mail']['#default_value'] = $patron['mails'][0]['mail'];
+        }
+
+        // Add our own validation and submit handling.
+        array_unshift($form['#validate'], 'alma_user_profile_validate');
+        $form['#submit'][] = 'alma_user_profile_submit';
+
+        $form['account']['alma_user_phone'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Phone number'),
+          '#description' => t('Phone number where the library can contact you. Is not published on the web site.'),
+          '#default_value' => $form['alma_user_patron_info']['#value']['phones'][0]['phone'],
+        );
+      }
+      break;
+    case 'ding_library_admin_settings_main_form':
+      // Since we're adding an option to the form, the placeholder is no
+      // longer needed.
+      unset($form['placeholder']);
+
+      $form['alma_user_cancel_fetchable_reservable'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Allow cancellation of reservations ready for pickup?'),
+        '#description' => t('If enabled, this will allow users that have reservations ready for pick-up to cancel those reservations. It does not affect reservations that are not ready for pick-up.'),
+        '#default_value' => variable_get('alma_user_cancel_fetchable_reservable', TRUE),
+      );
+      break;
+  }
+}
+
+/**
+ * Validation for the user profile form.
+ */
+function alma_user_profile_validate($form, &$form_state) {
+  $patron = $form_state['values']['alma_user_patron_info'];
+
+  if (strlen($form_state['values']['alma_user_phone']) > 0) {
+    $number = preg_replace('/\D+/', '', $form_state['values']['alma_user_phone']);
+    if (strlen($number) != 8 && $number > 20000000) {
+      form_set_error('account][alma_user_name', t('Phone number must be 8 digits.'));
+    }
+    else {
+      // If processed number was valid, set it as the correct value.
+      form_set_value($form['account']['alma_user_phone'], $number, $form_state);
+    }
+  }
+
+  // Check if Alma e-mail-address has changed.
+  $new_mail = trim($form_state['values']['alma_mail']);
+  if ($new_mail != $patron['mails'][0]['mail']) {
+    if (!filter_var($new_mail, FILTER_VALIDATE_EMAIL)) {
+      form_set_error('account][alma_mail', t('Please enter a valid e-mail-address.'));
+    }
+    else {
+      // Store the new mail as a new value, so we can test for it in the
+      // submit handler.
+      $form_state['values']['new_mail'] = $new_mail;
+
+      // If no Drupal users has this e-mail-address yet, also update
+      // Drupal's records.
+      if (!db_result(db_query("SELECT uid FROM {users} WHERE mail = '%s' AND uid != %d;", $form_state['values']['new_mail'], $form['_account']['#value']->uid))) {
+        $form_state['values']['mail'] = $new_mail;
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for the user profile form.
+ */
+function alma_user_profile_submit($form, &$form_state) {
+  $account = $form['_account']['#value'];
+  $creds = alma_user_get_credentials($account);
+  $patron = $form_state['values']['alma_user_patron_info'];
+
+  if (isset($form_state['values']['new_mail'])) {
+    if (!empty($patron['mails'])) {
+      alma_client_change_email_address($creds['borr_card'], $creds['pin_code'], $patron['mails'][0]['id'], $form_state['values']['new_mail']);
+    }
+    else {
+      alma_client_add_email_address($creds['borr_card'], $creds['pin_code'], $form_state['values']['new_mail']);
+    }
+  }
+
+  if (!empty($form_state['values']['alma_user_phone'])) {
+    if (!empty($patron['phones'])) {
+      // If user has a phone number, update it.
+      alma_client_change_phone_number($creds['borr_card'], $creds['pin_code'], $patron['phones'][0]['id'], $form_state['values']['alma_user_phone']);
+    }
+    else {
+      // If a phone number doesn't exist, add a new one.
+      alma_client_add_phone_number($creds['borr_card'], $creds['pin_code'], $form_state['values']['alma_user_phone']);
+    }
+  }
+  elseif (!empty($patron['phones'])) {
+    // If the user has cleared out his phone number field, remove all
+    // phone numbers from the database (not just the first, since then
+    // one of the others will just take its place, confusing the user).
+    foreach ($patron['phones'] as $phone) {
+      alma_client_remove_phone_number($creds['borr_card'], $creds['pin_code'], $phone['phone']);
+    }
+  }
+}
+
+/**
+ * Validation for the login form.
+ */
+function alma_user_login_validate($form, &$form_state) {
+  if (empty($form_state['values']['name']) || empty($form_state['values']['pass'])) {
+    // empty user name or password makes little sense to try and validate.
+    return;
+  }
+
+  // Remove everything from numbers from the “name” field to try and
+  // validate it as a library/borrower card.
+  $card = preg_replace('/\D+/', '', $form_state['values']['name']);
+
+  // Only try validation if we have 10 digits.
+  if (strlen($card) == 10) {
+    $uid = alma_user_check_credentials($card, $form_state['values']['pass'], TRUE);
+
+    if ($uid && $account = user_load($uid)) {
+      global $user;
+      $user = $account;
+      user_authenticate_finalize($form_state['values']);
+
+      // If we have Alma credentials and a user was logged in, cache the
+      // credentials in our own cache bin.
+      alma_user_cache_credentials($user, $form_state['values']['name'], $form_state['values']['pass']);
+    }
+  }
+}
+
+/**
+ * Submit handler for the login form.
+ */
+function alma_user_login_submit($form, &$form_state) {
+  global $user;
+  if (!empty($form_state['values']['name']) && !empty($form_state['values']['pass']) && $user->uid) {
+  }
+  $form_state['redirect'] = variable_get('alma_user_login_destination', '<front>');
+}
+
+/**
+ * Validate credentials with Alma
+ *
+ * Creates a new user if we do not have one already.
+ *
+ * @param string $borr_card
+ *    User borrower card/ID.
+ * @param string $pin_code
+ *    User pin code.
+ * @param boolean $login
+ *    If this is a login check, we do some extra work to update our data.
+ * @return
+ *    User uid if credentials are valid, FALSE if not.
+ */
+function alma_user_check_credentials($borr_card, $pin_code, $login=FALSE) {
+  $data = alma_client_get_patron_info($borr_card, $pin_code, $login);
+
+  if ($login && isset($data['blocks']) && !empty($data['blocks'])) {
+    $block_codes = alma_user_block_codes();
+    foreach ($data['blocks'] as $block) {
+      drupal_set_message(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
+    }
+  }
+
+  // Check if user exists.
+  $uid = db_result(db_query("SELECT uid FROM {alma_user} WHERE alma_id = '%s';", $data['patron_id']));
+  if ($uid) {
+    $account = user_load($uid);
+    // When logging in a returning normal user, update its display name.
+    if ($login && (!isset($account->has_secure_role) || !$account->has_secure_role)) {
+      db_query("UPDATE {ding_user} SET display_name = '%s' WHERE uid = %d;", $data['patron_name'], $uid);
+    }
+
+    if (isset($data['preferences']['patron_branch'])) {
+      db_query("UPDATE {alma_user} SET preferred_branch = '%s' WHERE uid = %d;", $data['preferences']['patron_branch'], $uid);
+    }
+
+    return $uid;
+  }
+  elseif (is_array($data) && !empty($data['patron_id'])) {
+    $random_name = $_SERVER['REQUEST_TIME'] . mt_rand();
+    // User data to pass to user_save().
+    $user_data = array(
+      'name' => $random_name,
+      'display_name' => $data['patron_name'],
+      'mail' => $data['mails'][0]['mail'],
+      // Login via Drupal's standard login should not be possible.
+      'pass' => microtime(TRUE) . mt_rand(),
+      'status' => 1,
+    );
+
+    // If no e-mail was set in the XML, we need to generate a
+    // random, invalid address,  since Drupal has a unique
+    // constraint on the mail column in the users table.
+    if (empty($user_data['mail'])) {
+      $user_data['mail'] = $random_name . '@mail.invalid';
+    }
+    // Set the initial e-mail to the same e-mail-address.
+    $user_data['init'] = $user_data['mail'];
+
+    // Saves the user and returns the user UID.
+    $user = user_save(NULL, $user_data);
+
+    $branch = (isset($data['preferences']['patron_branch'])) ? $data['preferences']['patron_branch'] : '';
+
+    // Store Alma user reference in our own table.
+    db_query("INSERT INTO {alma_user} (uid, alma_id, preferred_branch) VALUES (%d, '%s', '%s');", $user->uid, $data['patron_id'], $branch);
+
+    return($user->uid);
+  }
+}
+
+/**
+ * Access control for the forms we provide.
+ *
+ * @param string $name
+ *    The form name.
+ * @param object $account
+ *    The user account.
+ * @return boolean
+ *    If access was allowed.
+ */
+function alma_user_forms_access($name, $account) {
+  switch ($name) {
+    case 'alma_authenticate':
+    case 'change_pin':
+    case 'edit_contact_info':
+      if ($GLOBALS['user']->uid == $account->uid) {
+        return TRUE;
+      }
+      break;
+  }
+  return FALSE;
+}
+
+/**
+ * Get cached credentials for user.
+ *
+ * @param object $account
+ *    The user we're getting credentials for.
+ * @param boolean $redirect
+ *    Whether to redirect and collect credentials from the user if
+ *    they're not currently available. Default is TRUE.
+ * @return mixed
+ *    Returns array of user credentials if successful, FALSE if not.
+ */
+function alma_user_get_credentials($account, $redirect=TRUE, $reset=FALSE) {
+  if (isset($account->alma_id) && !empty($account->alma_id)) {
+    // Static cache of credentials, since they may be requested several
+    // times on a page.
+    static $creds;
+    if (!isset($creds)) {
+      $creds = array();
+    }
+
+    if (!isset($creds[$account->alma_id])) {
+      $data = cache_get(alma_user_get_cache_key($account), 'cache_alma_credentials');
+      if (!empty($data)) {
+        list($creds[$account->alma_id]['borr_card'], $creds[$account->alma_id]['pin_code']) = explode('|', $data->data);
+      }
+      else {
+        if ($redirect && $account->uid == $GLOBALS['user']->uid) {
+          // Go fetch the credentials before we can show this page.
+          drupal_goto('user/' . $account->uid . '/authenticate', drupal_get_destination());
+        }
+        return FALSE;
+      }
+    }
+
+    return $creds[$account->alma_id];
+  }
+  return FALSE;
+}
+
+/**
+ * Set cached credentials for user.
+ *
+ * A thin wrapper around cache_set(), but allows us provide more
+ * granular caching control in future versions.
+ *
+ * @param object $account
+ *    The user we're getting credentials for.
+ * @param string $borr_card
+ * @param string $pin_code
+ */
+function alma_user_cache_credentials($account, $borr_card, $pin_code) {
+  cache_set(alma_user_get_cache_key($account), $borr_card . '|' . $pin_code, 'cache_alma_credentials', $_SERVER['REQUEST_TIME'] + variable_get('alma_user_credential_cache_duration', 1800));
+}
+
+/**
+ * Generate a cache key based on the user account
+ *
+ * @param object $account
+ *    The user we're generating a cache key for.
+ * @return string
+ *    The cache key.
+ */
+function alma_user_get_cache_key($account) {
+  // The cache key is based on uid, login time and IP adresses.
+  // This should provide a reasonable level of security against hijacking.
+  return md5($account->uid . $account->login . $_SERVER['REMOTE_ADDR']);
+}
+
+/**
+ * Get Alma user status.
+ *
+ * @param object $account
+ *    The user we're getting credentials for.
+ * @param boolean $redirect
+ *    Whether to redirect and collect credentials from the user if
+ *    they're not currently available. Default is TRUE.
+ * @return mixed
+ *    Returns array of user status if successful, FALSE if not.
+ */
+function alma_user_get_status($account, $redirect=TRUE) {
+  static $status;
+  if (!isset($status)) {
+    $status = array();
+  }
+
+  // Return data from static variable cache, if available.
+  if (isset($status[$account->uid])) {
+    return $status[$account->uid];
+  }
+  else {
+    // Try looking up the data in the cache system.
+    $data = cache_get($account->uid, 'cache_alma_status');
+    if ($data instanceOf stdClass && !empty($data->data)) {
+      $status[$account->uid] = $data->data;
+      return $data->data;
+    }
+    else {
+      // If the status is not cached, we will need to look up the user's
+      // Alma credentials.
+      $creds = alma_user_get_credentials($account, $redirect);
+      if (!empty($creds)) {
+        // Generate the user status by querying Alma for different
+        // details. Remember that only non-sensitive information should
+        // be available in the status, since that is cached and
+        // available without authentication as long as the user's
+        // session lasts.
+        $data = array();
+
+        $reservations = alma_client_get_reservations($creds['borr_card'], $creds['pin_code']);
+        $loans = alma_client_get_loans($creds['borr_card'], $creds['pin_code']);
+
+        $data['loan_count'] = count($loans);
+        $data['reservation_count'] = count($reservations);
+
+        $data['loan_overdue_count'] = 0;
+
+        foreach ($loans as $loan) {
+          if ($loan['due_date'] < date('Y-m-d', $_SERVER['REQUEST_TIME'])) {
+            $data['loan_overdue_count']++;
+          }
+        }
+
+        return $data;
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of loan form element.
+ */
+function alma_user_elements_loan_process($element, $form_state) {
+  $element['#prefix'] = '<li class="loan loan-' . $element['#loan']['id'] . '">';
+  $element['#suffix'] = '</li>';
+
+  if ($element['#loan']['is_renewable']) {
+    $element['selected'] = array(
+      '#type' => 'checkbox',
+      '#prefix' => '<div class="select">',
+      '#suffix' => '</div>',
+    );
+  }
+  else {
+    $element['not_renewable'] = array(
+      '#value' => t('Not renewable'),
+      '#prefix' => '<div class="select">',
+      '#suffix' => '</div>',
+    );
+  }
+
+  $element['title'] = array(
+    '#value' => $element['#loan']['id'],
+    '#prefix' => '<div class="title">',
+    '#suffix' => '</div>',
+  );
+
+  return $element;
+}
+
+/**
+ * Preprocessor for the user status template.
+ *
+ * Preprocessor needs to be in the module, since our theme.inc is not
+ * loaded if the template is overridden by a theme.
+ */
+function template_preprocess_alma_user_status_block(&$variables) {
+  $account = $variables['user'];
+
+  // If has secure role is not set, ding_user's user_load has not been
+  // called for this user object. Let's do it manually.
+  if (!isset($account->has_secure_role)) {
+    $edit = array();
+    ding_user_user('load', $edit, $account);
+  }
+
+  $variables['wrapper_classes'] = '';
+  // Use alma_name if available.
+  if (!empty($account->display_name)) {
+    $variables['display_name'] = $account->display_name;
+  }
+  else {
+    $variables['display_name'] = $account->name;
+  }
+
+  if ($account->alma_id && !$account->has_secure_role) {
+    $variables['profile_link'] = 'user/' . $account->uid . '/profile';
+  }
+  else {
+    $variables['profile_link'] = 'user/' . $account->uid;
+  }
+
+  if (empty($variables['user_status'])) {
+    $variables['user_status_available'] = FALSE;
+    if (!empty($account->alma_id)) {
+      $variables['status_unavailable_message'] = t('Please !log_in to view your loaner status', array('!log_in' => l(t('log in'), 'user/' . $account->uid . '/authenticate')));
+    }
+    else {
+      // If user doesn't have an Alma ID, don't show a message, since we
+      // can't just log him in to get the status. This should usually
+      // only be the case for admin users.
+      $variables['status_unavailable_message'] = '';
+    }
+  }
+  else {
+    $variables['user_status_available'] = TRUE;
+    if ($variables['user_status']['loan_overdue_count'] > 0) {
+      $variables['wrapper_classes'] .= 'loans-overdue';
+    }
+
+    // Get the item count from alma_cart, if the module is available.
+    if (function_exists('alma_cart_user_count')) {
+      $variables['cart_count'] = alma_cart_user_count($account);
+    }
+    else {
+      $variables['cart_count'] = 0;
+    }
+  }
+}
+
+/**
+ * Preprocessor for the alma_user_personal_info template.
+ */
+function template_preprocess_alma_user_personal_info(&$variables) {
+  $variables['links'] = theme('item_list', array(
+    l(t('Edit contact information'), 'user/' . $variables['account']->uid . '/edit'),
+    l(t('Change PIN code'), 'user/' . $variables['account']->uid . '/change_pin'),
+  ));
+}
+
+/**
+ * Get list of Alma block codes with their descriptions.
+ */
+function alma_user_block_codes() {
+  return array(
+    'a' => 'Forkert adresse',
+    'c' => 'CPR-nr. fejl jf. folkeregister',
+    'd' => 'Låneren død jf. folkeregister',
+    'f' => 'Forældre-forbud',
+    'g' => 'Låneforbud',
+    'o' => 'Oprettet under nødudlån - låner skal i',
+    's' => 'Blokeret af selvbetjeningsterminal',
+    'u' => 'ukendt adresse i folkeregister',
+    'v' => 'Lånerkort/sygesik. væk',
+    'x' => 'Forsvundet jf. folkeregistret',
+  );
+}
+

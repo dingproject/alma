@@ -1,0 +1,967 @@
+<?php
+// $Id$
+
+/**
+ * @file alma.module
+ * Drupal module implementing Axiell ABs Alma API.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function alma_menu() {
+  $items = array();
+
+  $items['admin/settings/alma'] = array(
+    'title' => 'Axiell Alma',
+    'description' => 'Settings for the Alma module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('alma_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'alma.admin.inc',
+  );
+
+  $items['admin/settings/alma/main'] = array(
+    'title' => 'Alma',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['alma/item/%/availability'] = array(
+    'title' => 'Get Alma availability',
+    'description' => 'Get Alma availability for items.',
+    'page callback' => 'alma_item_availability_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'file' => 'alma.pages.inc',
+  );
+
+  $items['alma/item/%/details'] = array(
+    'title' => 'Get Alma details',
+    'description' => 'Get all Alma details for items. Availability, location, etc.',
+    'page callback' => 'alma_item_details_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'file' => 'alma.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_fluch_caches().
+ */
+function alma_fluch_caches() {
+  return array('cache_alma_requests');
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function alma_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break at install time.
+  $t = get_t();
+
+  if (!function_exists('simplexml_load_string')) {
+    $requirements['simplexml'] = array(
+      'title' => 'SimpleXML',
+      'description' => $t('The Alma module requires SimpleXML to function. Please install and/or enable SimpleXML in your PHP configuration.'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Return a fully instantiated AlmaClient instance.
+ */
+function alma_client() {
+  // This is basically a singleton. We also wait until right before
+  // instantiating to include our required classes. That seems like a
+  // decent performance tradeoff instead of loading everything on every
+  // page load.
+  static $client;
+  if (!isset($client)) {
+    $path = drupal_get_path('module', 'alma');
+    include($path . '/lib/AlmaClient/AlmaClient.class.php');
+    $client = new AlmaClient(variable_get('alma_base_url', ''));
+  }
+  return $client;
+}
+
+/**
+ * Get the complete organisation info from Alma.
+ *
+ * Includes branches, departments, locations, sublocations and
+ * collections.
+ *
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of the different organisational unit, each an array of their
+ *    member units.
+ */
+function alma_get_organisation($reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('alma_get_organisation', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $organisation = $cache->data;
+  }
+  else {
+    $organisation = array(
+      'branches' => alma_client_get_branches(FALSE, TRUE),
+      'departments' => alma_client_get_departments(TRUE),
+      'locations' => alma_client_get_locations(TRUE),
+      'sublocations' => alma_client_get_sublocations(TRUE),
+      'collections' => alma_client_get_collections(TRUE),
+    );
+
+    // Cache output for 24 hours if we got all the data correctly.
+    if ($organisation['branches'] && $organisation['departments'] && $organisation['locations'] && $organisation['sublocations'] && $organisation['collections']) {
+      cache_set('alma_get_organisation', $organisation, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 86400);
+    }
+  }
+
+  return $organisation;
+}
+
+/**
+ * Get list of library branches.
+ *
+ * @param boolean $optional
+ *    If true, add a "none" option to the branch list.
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of branch names, keyed by their ID.
+ */
+function alma_client_get_branches($optional=TRUE, $reset=FALSE) {
+  static $branches;
+
+  if (!isset($branches) || $reset) {
+    $cache = ($reset) ? FALSE : cache_get('get_branches', 'cache_alma_requests');
+    if ($cache && !empty($cache->data)) {
+      $branches = $cache->data;
+    }
+    else {
+      try {
+        $branches = alma_client()->get_branches();
+
+        // If request for whatever reason fails, return an empty array
+        // immediately so it won't be cached.
+        if (empty($branches)) {
+          return array();
+        }
+      } catch (Exception $e) {
+        watchdog('alma_user', 'get_branches error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+        return array();
+      }
+    }
+    // Cache output for 8 hours.
+    cache_set('get_branches', $branches, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  if ($optional) {
+    $branches = array_merge(array('' => t('- None -')), $branches);
+  }
+  return $branches;
+}
+
+/**
+ * Get list of library branches where patrons can fetch their reservations.
+ *
+ * @param boolean $optional
+ *    If true, add a "none" option to the branch list.
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of branch names, keyed by their ID.
+ */
+function alma_client_get_reservation_branches($optional=TRUE, $reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('get_reservation_branches', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $branches = $cache->data;
+  }
+  else {
+    try {
+      $branches = alma_client()->get_reservation_branches();
+
+      // If request for whatever reason fails, return an empty array
+      // immediately so it won't be cached.
+      if (empty($branches)) {
+        return array();
+      }
+
+    } catch (Exception $e) {
+      watchdog('alma_user', 'get_reservation_branches error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return array();
+    }
+
+    // Cache output for 8 hours.
+    cache_set('get_reservation_branches', $branches, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  if ($optional) {
+    $branches = array_merge(array('' => t('- None -')), $branches);
+  }
+  return $branches;
+}
+
+/**
+ * Get list of library departments.
+ *
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of department names, keyed by their ID.
+ */
+function alma_client_get_departments($reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('get_departments', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $departments = $cache->data;
+  }
+  else {
+    try {
+      $departments = alma_client()->get_departments();
+
+      // If request for whatever reason fails, return an empty array
+      // immediately so it won't be cached.
+      if (empty($departments)) {
+        return array();
+      }
+
+    } catch (Exception $e) {
+      watchdog('alma_user', 'get_departments error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return array();
+    }
+
+    // Cache output for 8 hours.
+    cache_set('get_departments', $departments, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  return $departments;
+}
+
+/**
+ * Get list of library locations.
+ *
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of location names, keyed by their ID.
+ */
+function alma_client_get_locations($reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('get_locations', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $locations = $cache->data;
+  }
+  else {
+    try {
+      $locations = alma_client()->get_locations();
+
+      // If request for whatever reason fails, return an empty array
+      // immediately so it won't be cached.
+      if (empty($locations)) {
+        return array();
+      }
+
+    } catch (Exception $e) {
+      watchdog('alma_user', 'get_locations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return array();
+    }
+
+    // Cache output for 8 hours.
+    cache_set('get_locations', $locations, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  return $locations;
+}
+
+/**
+ * Get list of library sublocations.
+ *
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of sublocation names, keyed by their ID.
+ */
+function alma_client_get_sublocations($reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('get_sublocations', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $sublocations = $cache->data;
+  }
+  else {
+    try {
+      $sublocations = alma_client()->get_sublocations();
+
+      // If request for whatever reason fails, return an empty array
+      // immediately so it won't be cached.
+      if (empty($sublocations)) {
+        return array();
+      }
+
+    } catch (Exception $e) {
+      watchdog('alma_user', 'get_sublocations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return array();
+    }
+
+    // Cache output for 8 hours.
+    cache_set('get_sublocations', $sublocations, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  return $sublocations;
+}
+
+/**
+ * Get list of library collections.
+ *
+ * @param boolean $reset
+ *    Optional. If TRUE reset the cached data and reload.
+ * @return array
+ *    Array of collection names, keyed by their ID.
+ */
+function alma_client_get_collections($reset=FALSE) {
+  // Return data from cache if available.
+  $cache = ($reset) ? FALSE : cache_get('get_collections', 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    $collections = $cache->data;
+  }
+  else {
+    try {
+      $collections = alma_client()->get_collections();
+
+      // If request for whatever reason fails, return an empty array
+      // immediately so it won't be cached.
+      if (empty($collections)) {
+        return array();
+      }
+
+    } catch (Exception $e) {
+      watchdog('alma_user', 'get_collections error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return array();
+    }
+
+    // Cache output for 8 hours.
+    cache_set('get_collections', $collections, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  }
+
+  return $collections;
+}
+
+/**
+ * Get information about a library patron.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param boolean $extended
+ *    Whether to use the extended information callback, returning DDE
+ *    Libra extension data like block codes.
+ * @return array
+ *    The patron information as an array.
+ */
+function alma_client_get_patron_info($borr_card, $pin_code, $extended = FALSE) {
+  try {
+    return alma_client()->get_patron_info($borr_card, $pin_code, $extended);
+  }
+  catch (AlmaClientBorrCardNotFound $e) {
+    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('An error occurred while trying to communicate with the library system. Please try again'), 'error', FALSE);
+    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Get a patron's reservations
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @return array
+ *    The reservations as an array.
+ */
+function alma_client_get_reservations($borr_card, $pin_code) {
+  try {
+    return alma_client()->get_reservations($borr_card, $pin_code);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Get a patron's loans
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @return array
+ *    The loans as an array.
+ */
+function alma_client_get_loans($borr_card, $pin_code) {
+  try {
+    return alma_client()->get_loans($borr_card, $pin_code);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Get a patron's debts
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @return array
+ *    The loans as an array.
+ */
+function alma_client_get_debts($borr_card, $pin_code) {
+  try {
+    return alma_client()->get_debts($borr_card, $pin_code);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_debts error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Add reservation.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param array $reservation
+ *    Data for the reservation we're adding.
+ */
+function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
+  // If reservation does not have a valid_to date, use the default
+  // interest period from alma_user, if available.
+  if (!isset($reservation['valid_to']) && function_exists('alma_user_user')) {
+    $account = user_load($GLOBALS['user']->uid);
+    $period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ALMA_USER_DEFAULT_INTEREST_PERIOD;
+
+    if ($period > 0) {
+      $reservation['valid_to'] = date('Y-m-d', $_SERVER['REQUEST_TIME'] + $period * 86400);
+    }
+  }
+  try {
+    return alma_client()->add_reservation($borr_card, $pin_code, $reservation);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'add_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Change a reservation
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param array $reservation
+ *    Data for the reservation we're changing.
+ * @param array $changes
+ *    Array of changes to apply.
+ */
+function alma_client_change_reservation($borr_card, $pin_code, $reservation, $changes) {
+  try {
+    return alma_client()->change_reservation($borr_card, $pin_code, $reservation, $changes);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'change_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Remove a reservation
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param array $reservation
+ *    Data for the reservation we're removing.
+ */
+function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
+  try {
+    return alma_client()->remove_reservation($borr_card, $pin_code, $reservation);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'remove_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Renew a loan
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param array $loan_ids
+ *    IDs for the loans we want renewed.
+ */
+function alma_client_renew_loan($borr_card, $pin_code, $loan_ids) {
+  try {
+    return alma_client()->renew_loan($borr_card, $pin_code, $loan_ids);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Add phone number
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param integer $number
+ *    New phone number.
+ * @param boolean $sms
+ *    If TRUE, the number can be used for SMS.
+ */
+function alma_client_add_phone_number($borr_card, $pin_code, $number, $sms = TRUE) {
+  try {
+    return alma_client()->add_phone_number($borr_card, $pin_code, $number, $sms);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'add_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Change phone number
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param string $number_id
+ *    The phone number ID. Usually the phone number itself.
+ * @param integer $new_number
+ *    New phone number.
+ * @param boolean $sms
+ *    If TRUE, the number can be used for SMS.
+ */
+function alma_client_change_phone_number($borr_card, $pin_code, $number_id, $new_number, $sms = TRUE) {
+  try {
+    return alma_client()->change_phone_number($borr_card, $pin_code, $number_id, $new_number, $sms);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'change_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Remove phone number
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param string $number_id
+ *    The phone number ID. Usually the phone number itself.
+ */
+function alma_client_remove_phone_number($borr_card, $pin_code, $number_id) {
+  try {
+    return alma_client()->remove_phone_number($borr_card, $pin_code, $number_id);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'remove_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Add e-mail address
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param integer $new_email
+ *    New e-mail address.
+ */
+function alma_client_add_email_address($borr_card, $pin_code, $new_email) {
+  try {
+    return alma_client()->add_email_address($borr_card, $pin_code, $new_email);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'add_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Change e-mail address
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param integer $email_id
+ *    The e-mail address ID. Usually the e-mail address itself.
+ * @param integer $new_email
+ *    New e-mail address.
+ */
+function alma_client_change_email_address($borr_card, $pin_code, $email_id, $new_email) {
+  try {
+    return alma_client()->change_email_address($borr_card, $pin_code, $email_id, $new_email);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'change_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Remove e-mail address
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's four digit PIN code.
+ * @param string $email_id
+ *    The e-mail address ID. Usually the e-mail address itself.
+ */
+function alma_client_remove_email_address($borr_card, $pin_code, $email_id) {
+  try {
+    return alma_client()->remove_email_address($borr_card, $pin_code, $email_id);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'remove_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Change PIN code.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $new_pin
+ *    Library patron's new four digit PIN code.
+ */
+function alma_client_change_pin($borr_card, $pin_code, $new_pin) {
+  try {
+    return alma_client()->change_pin($borr_card, $pin_code, $new_pin);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'change_pin error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Check if user has reservation already.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $item_id
+ *    Local ID for the item we're checking for.
+ * @return boolean
+ */
+function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
+  try {
+    $reservations = alma_client()->get_reservations($borr_card, $pin_code);
+    foreach ($reservations as $res) {
+      if ($res['record_id'] == $item_id) {
+        return TRUE;
+      }
+    }
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get details about a catalogue record.
+ *
+ * @param string $alma_ids
+ *    ID for the records, comma-separated.
+ * @return array
+ *    Information about the record.
+ */
+function alma_client_catalogue_record_detail($alma_ids) {
+  if (empty($alma_ids)) {
+    return array();
+  }
+
+  try {
+    $data = alma_client()->catalogue_record_detail($alma_ids);
+    if (empty($data)) { return array(); }
+  } catch (Exception $e) {
+    watchdog('alma_user', 'catalogue_record_detail error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+
+  return $data;
+}
+
+/**
+ * Get availability for one or more catalogue records.
+ *
+ * @param string $alma_ids
+ *    IDs for the records, comma-separated.
+ * @return array
+ *    Information about the record.
+ */
+function alma_client_get_availability($alma_ids) {
+  // Return data from cache if available.
+  $cache = cache_get('alma_availability:' . $alma_ids, 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    return $cache->data;
+  }
+
+  try {
+    $data = alma_client()->get_availability($alma_ids);
+    if (empty($data)) { return array(); }
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_availability error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+  // Cache output for 8 hours.
+  cache_set('get_availability:' . $alma_ids, $data, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+  return $data;
+}
+
+/**
+ * Pay one or more Alma debts.
+ *
+ * @param string $debt_ids
+ *    IDs for the debts, comma-separated.
+ */
+function alma_client_add_payment($debt_ids, $order_id = NULL) {
+  try {
+    $data = alma_client()->add_payment($debt_ids, $order_id);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'add_payment error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+}
+
+/**
+ * Change user’s preferred branch.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $branch_code
+ *    New preferred branch.
+ */
+function alma_client_change_patron_preferences($borr_card, $pin_code, $branch_code) {
+  try {
+    $data = alma_client()->change_patron_preferences($borr_card, $pin_code, $branch_code);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'change_patron_preferences error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+}
+
+/**
+ * Add an Alma absent period.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $from_date
+ *    Absent period start date.
+ * @param string $to_date
+ *    Absent period start date.
+ */
+function alma_client_add_absent_period($borr_card, $pin_code, $from_date, $to_date) {
+  try {
+    $data = alma_client()->add_absent_period($borr_card, $pin_code, $from_date, $to_date);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'add_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+}
+
+/**
+ * Change existing absent period.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $absent_id
+ *    ID for existing period.
+ * @param string $from_date
+ *    Absent period start date.
+ * @param string $to_date
+ *    Absent period start date.
+ */
+function alma_client_change_absent_period($borr_card, $pin_code, $absent_id, $from_date, $to_date) {
+  try {
+    $data = alma_client()->change_absent_period($borr_card, $pin_code, $absent_id, $from_date, $to_date);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'change_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+}
+
+/**
+ * Remove existing absent period.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $absent_id
+ *    ID for existing period.
+ */
+function alma_client_remove_absent_period($borr_card, $pin_code, $absent_id) {
+  try {
+    $data = alma_client()->remove_absent_period($borr_card, $pin_code, $absent_id);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'remove_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+}
+
+/**
+ * Helper function that adds our JavaScript behaviors.
+ *
+ * @param string $page_type
+ *    The type of page we're adding JavaScript for. Different pages gets
+ *    different things.
+ */
+function alma_add_js($page_type) {
+  // Static variable to avoid to adding data more than once.
+  static $called;
+  if (!$called) {
+    drupal_add_js(array('alma' => alma_get_organisation()), 'setting');
+    $called = TRUE;
+  }
+
+  $path = drupal_get_path('module', 'alma') . '/js';
+  switch ($page_type) {
+    case 'ting_object_view':
+      drupal_add_js($path . '/alma.availability.js', 'module', 'footer', TRUE);
+      drupal_add_js($path . '/alma.availability.ting_object_view.js', 'module', 'footer', TRUE);
+      break;
+    case 'ting_collection_view':
+      drupal_add_js($path . '/alma.availability.js', 'module', 'footer', TRUE);
+      drupal_add_js('$(function(){Drupal.almaAvailability.get_details(Drupal.almaAvailability.updateStatus)});', 'inline', 'footer', TRUE);
+      break;
+  }
+}
+
+/**
+ * Calculate the time to wait for a reservation.
+ *
+ * @param array $records
+ *    The records array from a alma_client_catalogue_record_detail request.
+ * @return array
+ *    Wait time, keyed by Alma ID.
+ */
+function alma_calculate_wait_time($records) {
+  $wait = array();
+
+  foreach ($records as $record) {
+    if ($record['available_count'] > 0) {
+      $wait[$record['alma_id']] = t('A couple of days');
+    }
+    else {
+      $total = 0;
+
+      foreach ($record['holdings'] as $holding) {
+        $total += $holding['total_count'];
+      }
+
+      if ($total > 0 && $record['reservation_count'] > 0) {
+        $days = $total / $record['reservation_count'] * 30;
+
+        if ($days < 9) {
+          $wait[$record['alma_id']] = t('About a week');
+        }
+        elseif ($days < 16) {
+          $wait[$record['alma_id']] = t('About two weeks');
+        }
+        elseif ($days < 35) {
+          $wait[$record['alma_id']] = t('About a month');
+        }
+        elseif ($days < 65) {
+          $wait[$record['alma_id']] = t('About two months');
+        }
+        else {
+          $wait[$record['alma_id']] = t('More than two months');
+        }
+      }
+      else {
+        $wait[$record['alma_id']] = t('Unknown');
+      }
+    }
+  }
+
+  return $wait;
+}
+
+/**
+ * Format a date from Alma.
+ *
+ * @param string $datestring
+ *    Date in ISO 8601 format (eg. 2010-04-10).
+ * @param string $date_format
+ *    The format (in date() style) to use when formatting the date.
+ * @return string
+ *    Formatted date or original $datestring on failure.
+ */
+function alma_format_date($datestring, $date_format) {
+  if ($datestring) {
+    $timestamp = strtotime($datestring);
+
+    if ($timestamp > 1) {
+      return format_date($timestamp, 'custom', $date_format);
+    }
+  }
+  return $datestring;
+}
+

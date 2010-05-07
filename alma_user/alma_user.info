@@ -1,0 +1,10 @@
+; $Id$
+name = Alma user
+description = Uses the Axiell Alma API to handle user logins and display user data.
+package = Axiell
+php = 5.2
+core = 6.x
+dependencies[] = alma
+dependencies[] = ding_base
+dependencies[] = ding_user
+

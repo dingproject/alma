@@ -1,0 +1,92 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Alma DIBS integration.
+ */
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function alma_dibs_form_alma_user_forms_debts_details_alter(&$form, &$form_state) {
+  $form['#submit'][] ='alma_ding_forms_debts_details_submit';
+}
+
+/**
+ * Implementation of hook_dibsapi().
+ */
+function alma_dibs_dibsapi($op = 'info', $delta = NULL, &$transaction = NULL, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'info':
+      $info = array('1' => array('info' => t('Alma debts payment')));
+      if (!empty($delta)) {
+        return isset($info[$delta]) ? $info[$delta] : NULL;
+      }
+      else {
+        return $info;
+      }
+      break;
+    case 'transaction_cancel':
+      watchdog('alma_dibs', 'DIBS  order %order cancelled by user.', array(
+        '%order' => $transaction['payment_order_id'],
+      ), WATCHDOG_NOTICE);
+      break;
+    case 'transaction_accept':
+      if ($transaction['payment_status'] == 1) {
+        drupal_set_message(t('Your payment of @amount was received.', array('@amount' => $transaction['payment_price'])));
+        watchdog('alma_dibs', 'Confirmation for DIBS transaction %transaction, order %order was displayed.', array(
+          '%transaction' => $transaction['payment_transaction_id'],
+          '%order' => $transaction['payment_order_id'],
+        ), WATCHDOG_DEBUG);
+        return drupal_goto('user/' . $GLOBALS['user']->uid . '/status');
+      }
+      else {
+        drupal_set_message(t('Payment not verified by DIBS. This indicates a problem with the network. Please try again and contact the system administrator if it persists'), 'error');
+        watchdog('alma_dibs', 'Unverified DIBS transaction %transaction, order %order at accept URL: !data', array(
+          '%transaction' => $transaction['payment_transaction_id'],
+          '%order' => $transaction['payment_order_id'],
+          '!data' => '<pre>' . check_plain(print_r($transaction, TRUE)) . '</pre>',
+        ), WATCHDOG_CRITICAL);
+        return drupal_goto('user/' . $GLOBALS['user']->uid . '/debts');
+      }
+      break;
+    case 'transaction_callback':
+      // Tell Alma that the debt was paid.
+      alma_client_add_payment(implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+
+      watchdog('alma_dibs', 'DIBS has verified transaction %transaction, order %order.', array(
+        '%transaction' => $transaction['payment_transaction_id'],
+        '%order' => $transaction['payment_order_id'],
+      ), WATCHDOG_NOTICE);
+      break;
+  }
+}
+
+/**
+ * Submit handler for debts details form (from alma_user module).
+ */
+function alma_ding_forms_debts_details_submit($form, &$form_state) {
+  $creds = alma_user_get_credentials($form_state['values']['account']);
+  $patron = alma_client_get_patron_info($creds['borr_card'], $creds['pin_code']);
+
+  $payment_data = array(
+    'api_module' => 'alma_dibs',
+    'api_delta' => '1',
+    'payment_price' => $form_state['values']['total_amount'],
+    'order_info_short' => t('Payment of library dues'),
+    'order_price_info' => array('Total' => $form_state['values']['total_amount']),
+    'customer_name' => $patron['patron_name'],
+    'customer_address' => $patron['addresses'][0]['street'],
+    'customer_address2' => $patron['addresses'][0]['care_of'],
+    'customer_city' => $patron['addresses'][0]['city'],
+    'customer_zipcode' => $patron['addresses'][0]['postal_code'],
+    'customer_email' => $patron['mails'][0]['mail'],
+    'customer_phone' => $patron['phones'][0]['phone'],
+    // Send the selected parameters along so we can use them to settle 
+    // the debts in Alma.
+    'params' => array('selected_debts' => $form_state['values']['selected_debts']),
+  );
+  dibs_payment_prepare($payment_data);
+}
+

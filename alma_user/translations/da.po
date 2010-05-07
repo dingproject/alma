@@ -1,0 +1,506 @@
+# $Id$
+#
+# Danish translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  alma_user_personal_info.tpl.php: n/a
+#  alma_user_status_block.tpl.php: n/a
+#  alma_user.admin.inc: n/a
+#  alma_user.forms.inc: n/a
+#  alma_user.module: n/a
+#  plugins/content_types/profile.inc: n/a
+#  alma_user.theme.inc: n/a
+#  alma_user.install: n/a
+#  alma_user.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-11-29 16:31+0100\n"
+"PO-Revision-Date: 2009-11-29 16:41+0100\n"
+"Last-Translator: Mikkel Høgh <mikkel@hoegh.org>\n"
+"Language-Team: Dansk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: alma_user_personal_info.tpl.php:10
+msgid "Basic information"
+msgstr "Basisinformation"
+
+#: alma_user_personal_info.tpl.php:12
+msgid "Name"
+msgstr "Navn"
+
+#: alma_user_personal_info.tpl.php:14
+msgid "Address"
+msgstr "Adresse"
+
+#: alma_user_personal_info.tpl.php:21
+msgid "Contact information"
+msgstr "Kontaktinformation"
+
+#: alma_user_personal_info.tpl.php:23
+msgid "Mobile phone"
+msgstr "Mobiltelefon"
+
+#: alma_user_personal_info.tpl.php:27
+msgid "E-mail address"
+msgstr "E-mail-adresse"
+
+#: alma_user_status_block.tpl.php:12
+msgid "Welcome"
+msgstr "Velkommen"
+
+#: alma_user_status_block.tpl.php:24
+msgid "Loans"
+msgstr "Hjemlån"
+
+#: alma_user_status_block.tpl.php:27
+msgid "Reservations"
+msgstr "Reserveringer"
+
+#: alma_user.admin.inc:12
+msgid "Credential cache duration"
+msgstr ""
+
+#: alma_user.admin.inc:13
+msgid "Determines how long the user’s Alma credentials will be cached for. For the duration of the cache, the user will be able to access his personal information and interact with the library system without having to provide his credentials again."
+msgstr ""
+
+#: alma_user.admin.inc:15
+msgid "5 minutes"
+msgstr ""
+
+#: alma_user.admin.inc:16
+msgid "15 minutes"
+msgstr ""
+
+#: alma_user.admin.inc:17
+msgid "30 minutes"
+msgstr ""
+
+#: alma_user.admin.inc:18
+msgid "1 hour"
+msgstr "1 time"
+
+#: alma_user.admin.inc:19
+msgid "3 hours"
+msgstr ""
+
+#: alma_user.admin.inc:20
+msgid "12 hours"
+msgstr ""
+
+#: alma_user.admin.inc:21
+msgid "1 day"
+msgstr "1 dag"
+
+#: alma_user.admin.inc:22
+msgid "3 days"
+msgstr ""
+
+#: alma_user.admin.inc:23
+msgid "7 days"
+msgstr ""
+
+#: alma_user.admin.inc:30
+msgid "PIN code length"
+msgstr ""
+
+#: alma_user.admin.inc:47
+msgid "PIN code length must be a number larger than zero."
+msgstr ""
+
+#: alma_user.forms.inc:30
+msgid "To access your personal information, you need to authenticate."
+msgstr ""
+"Du skal logge ind for at få adgang til dine personlige oplysninger og "
+"din lånerstatus."
+
+#: alma_user.forms.inc:44
+msgid "Borrower card"
+msgstr "Cpr- eller kortnummer"
+
+#: alma_user.forms.inc:50
+msgid "PIN code"
+msgstr "Pinkode"
+
+#: alma_user.forms.inc:56
+msgid "Log in"
+msgstr "Log ind"
+
+#: alma_user.forms.inc:72
+msgid "Invalid borrower card or pin code"
+msgstr "Ugyldigt lånernummer eller PIN-kode."
+
+#: alma_user.forms.inc:110
+msgid "Current PIN code"
+msgstr "Nuværende PIN-kode"
+
+#: alma_user.forms.inc:118
+msgid "New PIN code"
+msgstr "Ny PIN-kode"
+
+#: alma_user.forms.inc:126
+msgid "Repeat new PIN code"
+msgstr "Gentag ny PIN-kode"
+
+#: alma_user.forms.inc:134
+msgid "Save new PIN code"
+msgstr "Gem ny PIN-kode"
+
+#: alma_user.forms.inc:147
+msgid "Please provide your current PIN code."
+msgstr "Skriv venligst din nuværende PIN-kode"
+
+#: alma_user.forms.inc:151
+msgid "The new PIN code must be different than the current PIN code."
+msgstr "Den nye PIN-kode skal være forskellige fra den nuværende."
+
+#: alma_user.forms.inc:155
+msgid "Please input your new PIN code twice for confirmation."
+msgstr "Skriv venligst din nye PIK-kode to gange for at bekræfte."
+
+#: alma_user.forms.inc:159
+msgid "The new PIN code must be @num numerical digits."
+msgstr "Den nye PIN-kode skal bestå af @num tal."
+
+#: alma_user.forms.inc:192
+msgid "Preferred library"
+msgstr "Afhent reserveringer på"
+
+#: alma_user.forms.inc:204
+msgid "Period of interest"
+msgstr "Interesseperiode"
+
+#: alma_user.forms.inc:205
+msgid "How long are you willing to wait for a reservation?"
+msgstr "Hvor længe vil du vente på en reservering?"
+
+#: alma_user.forms.inc:225
+msgid "Update"
+msgstr "Opdatér"
+
+#: alma_user.forms.inc:240
+msgid "Start date must later than today"
+msgstr "Startdato skal være senere end i dag."
+
+#: alma_user.forms.inc:244
+msgid "Start date must be before end date"
+msgstr "Startdato skal være før slutdato."
+
+#: alma_user.forms.inc:297
+msgid "Not interested after"
+msgstr "Ikke interesseret efter"
+
+#: alma_user.forms.inc:305
+msgid "New pickup branch"
+msgstr "Afhent reserveringer på"
+
+#: alma_user.forms.inc:312
+msgid "Cancel selected"
+msgstr "Slet valgte reservering(er)"
+
+#: alma_user.forms.inc:318
+msgid "Update selected"
+msgstr "Opdatér valgte reservering(er)"
+
+#: alma_user.forms.inc:332
+msgid "Invalid date"
+msgstr "Ugyldig dato."
+
+#: alma_user.forms.inc:338
+msgid "Date must be later than today."
+msgstr "Datoen skal være senere end I dag."
+
+#: alma_user.forms.inc:415 alma_user.module:541
+msgid "Not renewable"
+msgstr "Kan ikke fornyes"
+
+#: alma_user.forms.inc:422
+msgid "Renew selected"
+msgstr "Forny hjemlån"
+
+#: alma_user.forms.inc:489 plugins/content_types/profile.inc:121;130
+msgid "Pay now"
+msgstr "Betal med det samme"
+
+#: alma_user.forms.inc:502
+msgid "Please select one or more debts to pay."
+msgstr "Vælg en eller flere gældsposter at betale."
+
+#: alma_user.forms.inc:513
+msgid "Payment must be larger than zero."
+msgstr "Betalingen skal være større end nul."
+
+#: alma_user.forms.inc:199
+msgid "1 month"
+msgid_plural "@count months"
+msgstr[0] "1 måned"
+msgstr[1] "@count måneder"
+
+#: alma_user.theme.inc:41;58;91
+msgid "Select"
+msgstr "Vælg"
+
+#: alma_user.theme.inc:42;58
+msgid "Title"
+msgstr "Titel"
+
+#: alma_user.theme.inc:43
+msgid "Valid to"
+msgstr "Gyldig til"
+
+#: alma_user.theme.inc:44
+msgid "Pickup branch"
+msgstr "Afhentningssted"
+
+#: alma_user.theme.inc:45
+msgid "Queue number"
+msgstr "Nummer i køen"
+
+#: alma_user.theme.inc:64
+msgid "Overdue loans"
+msgstr "Hjemlån der har overskredet afleveringsdato"
+
+#: alma_user.theme.inc:67
+msgid "Due in @count days, @date"
+msgstr "Afleveres om @count dage, @date"
+
+#: alma_user.theme.inc:92
+msgid "Note"
+msgstr "Note"
+
+#: alma_user.theme.inc:93
+msgid "Date"
+msgstr "Dato"
+
+#: alma_user.theme.inc:94
+msgid "Amount"
+msgstr "Beløb"
+
+#: alma_user.module:49
+msgid "Library account/login"
+msgstr "Bibliotekskonto/log-in"
+
+#: alma_user.module:217
+msgid "Phone number"
+msgstr "Mobiltelefon"
+
+#: alma_user.module:218
+msgid "Phone number where the library can contact you. Is not published on the web site."
+msgstr ""
+"Skriv dit mobiltelefonnummer, hvis du ønsker at modtage "
+"servicemeddelelser på SMS."
+
+#: alma_user.module:233
+msgid "Phone number must be 8 digits."
+msgstr "Mobilnummer skal bestå af otte tal."
+
+#: alma_user.module:591
+msgid "Please !log_in to view your loaner status"
+msgstr "!log_in for at se din lånerstatus"
+
+#: alma_user.module:591
+msgid "log in"
+msgstr "Log ind"
+
+#: alma_user.module:621
+msgid "Edit contact information"
+msgstr "Redigér kontaktinformation"
+
+#: alma_user.module:622
+msgid "Change PIN code"
+msgstr "Skift pinkode"
+
+#: alma_user.module:11
+msgid "User settings"
+msgstr "Brugerindstillinger"
+
+#: alma_user.module:20
+msgid "Please authenticate"
+msgstr "Log ind"
+
+#: alma_user.module:30
+msgid "Change pin code"
+msgstr "Skift PIN-kode"
+
+#: alma_user.module:0
+msgid "alma_user"
+msgstr ""
+
+#: alma_user.install:32
+msgid "Keep track of the information tying Drupal users to Alma patrons."
+msgstr ""
+
+#: alma_user.install:35
+msgid "{users}.uid for node"
+msgstr ""
+
+#: alma_user.install:41
+msgid "Alma ID."
+msgstr ""
+
+#: alma_user.install:47
+msgid "Users real name from Alma"
+msgstr ""
+
+#: alma_user.install:53
+msgid "{ding_library}.branch_id for user’s preferred branch."
+msgstr ""
+
+#: alma_user.info:0
+msgid "Alma user"
+msgstr ""
+
+#: alma_user.info:0
+msgid "Uses the Axiell Alma API to handle user logins and display user data."
+msgstr ""
+
+#: alma_user.info:0
+msgid "Axiell"
+msgstr ""
+
+#: plugins/content_types/profile.inc:17;63
+msgid "Library patron profile"
+msgstr "Biblioteksbrugerprofil"
+
+#: plugins/content_types/profile.inc:27
+msgid "Personal information"
+msgstr "Personlige oplysninger"
+
+#: plugins/content_types/profile.inc:28
+msgid "Display of the patron’s personal information, with options to edit them."
+msgstr ""
+
+#: plugins/content_types/profile.inc:31
+msgid "Library settings"
+msgstr "Biblioteksindstillinger"
+
+#: plugins/content_types/profile.inc:32
+msgid "The patron’s library settings. Allows the patron to choose a preferred library and suspend his reservations for a period."
+msgstr ""
+
+#: plugins/content_types/profile.inc:35
+msgid "Reservation list"
+msgstr "Reservationsliste"
+
+#: plugins/content_types/profile.inc:36
+msgid "A simple list of the patron’s reservations."
+msgstr ""
+
+#: plugins/content_types/profile.inc:39
+msgid "Reservation details"
+msgstr "Reservationsdetaljer"
+
+#: plugins/content_types/profile.inc:40
+msgid "A detailed list of the patron’s reservations."
+msgstr ""
+
+#: plugins/content_types/profile.inc:43
+msgid "Loan list"
+msgstr "Hjemlånsliste"
+
+#: plugins/content_types/profile.inc:44
+msgid "A simple list of the patron’s loans."
+msgstr ""
+
+#: plugins/content_types/profile.inc:47
+msgid "Loan details"
+msgstr ""
+
+#: plugins/content_types/profile.inc:48
+msgid "A detailed list of the patron’s loans."
+msgstr ""
+
+#: plugins/content_types/profile.inc:51
+msgid "User debts notice"
+msgstr ""
+
+#: plugins/content_types/profile.inc:52
+msgid "Provides a short noice to the user about his library debts."
+msgstr ""
+
+#: plugins/content_types/profile.inc:55
+msgid "User debts details"
+msgstr ""
+
+#: plugins/content_types/profile.inc:56
+msgid "Provides the full list of user debts, with an option to pay them."
+msgstr ""
+
+#: plugins/content_types/profile.inc:64
+msgid "Patron"
+msgstr "Biblioteksbruger"
+
+#: plugins/content_types/profile.inc:83
+msgid "Your profile"
+msgstr "Dine personlige oplysninger"
+
+#: plugins/content_types/profile.inc:88
+msgid "Your library"
+msgstr "Dit bibliotek"
+
+#: plugins/content_types/profile.inc:93;99
+msgid "Your reservations"
+msgstr "Dine reservationer"
+
+#: plugins/content_types/profile.inc:104;110
+msgid "Your loans"
+msgstr "Dine hjemlån"
+
+#: plugins/content_types/profile.inc:118
+msgid "You owe @amount for “%note”. !pay_link."
+msgstr "Du skylder @amount for gebyr på “%note”. !pay_link."
+
+#: plugins/content_types/profile.inc:125
+msgid "You owe @amount for “%note” and !others_link. !pay_link."
+msgstr ""
+"Du skylder @amount for gebyr på “%note” og !others_link. "
+"!pay_link. "
+
+#: plugins/content_types/profile.inc:142
+msgid "Error fetching your library patron profile."
+msgstr "Kunne ikke hente biblioteksbrugerprofil."
+
+#: plugins/content_types/profile.inc:154
+msgid "“@s”: Personal information"
+msgstr ""
+
+#: plugins/content_types/profile.inc:156
+msgid "“@s”: Library settings"
+msgstr ""
+
+#: plugins/content_types/profile.inc:158
+msgid "“@s”: Reservation list"
+msgstr ""
+
+#: plugins/content_types/profile.inc:160
+msgid "“@s”: Reservation details"
+msgstr ""
+
+#: plugins/content_types/profile.inc:162
+msgid "“@s”: Loan list"
+msgstr ""
+
+#: plugins/content_types/profile.inc:164
+msgid "“@s”: Loan details"
+msgstr ""
+
+#: plugins/content_types/profile.inc:166
+msgid "“@s”: Debts notice"
+msgstr ""
+
+#: plugins/content_types/profile.inc:168
+msgid "“@s”: Debts list"
+msgstr ""
+
+#: plugins/content_types/profile.inc:128
+msgid "one other"
+msgid_plural "@count others"
+msgstr[0] "en anden"
+msgstr[1] "@count andre"
+
