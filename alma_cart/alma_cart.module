@@ -82,7 +82,7 @@ function alma_cart_add_ting_object($object) {
     'ting_id' => $object->id,
     'created' => $_SERVER['REQUEST_TIME'],
     'title' => $object->title,
-    'author' => $object->creator[0],
+    'author' => $object->creators[0],
     'type' => $object->type,
     'thumbnail_url' => $object->additionalInformation->thumbnailUrl,
   );
