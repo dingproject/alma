@@ -111,7 +111,7 @@ function alma_cart_user_count($account) {
  * hooks and overriding theme functions.
  */
 function theme_alma_cart_forms_cart_details($form) {
-  $header = array(t('Select'), '', t('Title'), t('Wait time'));
+  $header = array(t('Select'), '', t('Title'));
   $rows = array();
   $output = '';
   $wait = $form['wait_time']['#value'];
@@ -141,12 +141,6 @@ function theme_alma_cart_forms_cart_details($form) {
     $cells['title'] = array(
       'class' => 'title',
       'data' => theme('alma_cart_item', $item),
-    );
-
-
-    $cells['wait'] = array(
-      'class' => 'wait',
-      'data' => (isset($wait[$item['alma_id']])) ? $wait[$item['alma_id']] : t('Unknown'),
     );
 
     $rows[] = $cells;

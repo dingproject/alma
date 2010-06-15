@@ -37,11 +37,6 @@ function alma_cart_forms_cart_details(&$form_state, $account) {
 
   $details = alma_client_catalogue_record_detail(implode(',', $alma_ids));
 
-  $form['wait_time'] = array(
-    '#type' => 'value',
-    '#value' => alma_calculate_wait_time($details['records']),
-  );
-
   $form['cart'] = array(
     // Set as tree to get all of our checkboxes as an subarray of values
     // in the form_state['values'] array.
