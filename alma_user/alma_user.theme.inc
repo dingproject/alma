@@ -324,7 +324,7 @@ function theme_alma_user_forms_loan_details($form) {
 
       $cells['title'] = array(
         'class' => 'title',
-        'data' => theme('alma_user_list_item', $loan) . ' (<span class="material-number">' . t('Mat. no @num', array('@num' => $loan['record_id'])) . '</span>)',
+        'data' => theme('alma_user_list_item', $loan) . ' (<span class="material-number">' . t('Mat. no @num', array('@num' => $loan['id'])) . '</span>)',
       );
 
       $cells['loan_date'] = array(
