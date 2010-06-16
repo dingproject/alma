@@ -362,13 +362,33 @@ function alma_user_forms_reservation_details($form_state, $account, $records) {
  * Reservation details form validation.
  */
 function alma_user_forms_reservation_details_validate($form, &$form_state) {
-  if (!empty($form_state['values']['new_expiry'])) {
-    list($year, $month, $day) = explode('-', trim($form_state['values']['new_expiry']));
+	$data = $form_state['values'];
+
+	// Prevent users from updating reservations which is ready for pickup at a branch
+  $branches = alma_client_get_branches();
+	foreach ($data['reservations'] as $id => $selected) {
+    if ($selected == 1) {
+    	$reservation = $data['reservation_data'][$id]; 
+      if (($reservation['status'] == 'fetchable') && // Detect fetable reservations...
+          (($reservation['pickup_branch'] != $data['new_pickup_branch']) || // where the user tried to alter pickup branch
+          $data['new_expiry'])) { // or alter expiry date
+        $response = alma_client_catalogue_record_detail($reservation['record_id']);
+        if ($response['request_status'] == 'ok' && ($record = array_shift($response['records']))) {
+        	form_set_error('reservations', t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $record['titles'][0], '!branch' => $branches[$reservation['pickup_branch']])));
+        } else {
+          form_set_error('reservations', t('You can not perform changes to reservations which are ready for pick up'));
+        }
+      }
+    }
+  }
+  
+	if (!empty($data['new_expiry'])) {
+    list($year, $month, $day) = explode('-', trim($data['new_expiry']));
     if (!checkdate($month, $day, $year)) {
       form_set_error('new_expiry', t('Invalid date'));
     }
 
-    $timestamp = strtotime($form_state['values']['new_expiry']);
+    $timestamp = strtotime($data['new_expiry']);
 
     if ($timestamp <= $_SERVER['REQUEST_TIME']) {
       form_set_error('new_expiry', t('Date must be later than today.'));
@@ -376,6 +396,7 @@ function alma_user_forms_reservation_details_validate($form, &$form_state) {
     else {
       form_set_value($form['new_expiry'], format_date($timestamp, 'custom', 'Y-m-d'), $form_state);
     }
+    
   }
 }
 
