@@ -122,3 +122,14 @@ function alma_user_update_6004() {
   return $ret;
 }
 
+/**
+ * Implementation of hook_update_N().
+ *
+ * Remove obsolte table for caching Alma status
+ */
+function alma_user_update_6005() {
+  $ret = array();
+  db_drop_table($ret, 'cache_alma_status');
+  return $ret;
+}
+

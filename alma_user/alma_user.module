@@ -568,40 +568,30 @@ function alma_user_get_status($account, $redirect=TRUE) {
     return $status[$account->uid];
   }
   else {
-    // Try looking up the data in the cache system.
-    $data = cache_get($account->uid, 'cache_alma_status');
-    if ($data instanceOf stdClass && !empty($data->data)) {
-      $status[$account->uid] = $data->data;
-      return $data->data;
-    }
-    else {
-      // If the status is not cached, we will need to look up the user's
-      // Alma credentials.
-      $creds = alma_user_get_credentials($account, $redirect);
-      if (!empty($creds)) {
-        // Generate the user status by querying Alma for different
-        // details. Remember that only non-sensitive information should
-        // be available in the status, since that is cached and
-        // available without authentication as long as the user's
-        // session lasts.
-        $data = array();
+    $creds = alma_user_get_credentials($account, $redirect);
+    if (!empty($creds)) {
+      // Generate the user status by querying Alma for different
+      // details. Remember that only non-sensitive information should
+      // be available in the status, since that is cached and
+      // available without authentication as long as the user's
+      // session lasts.
+      $data = array();
 
-        $reservations = alma_client_get_reservations($creds['borr_card'], $creds['pin_code']);
-        $loans = alma_client_get_loans($creds['borr_card'], $creds['pin_code']);
+      $reservations = alma_client_get_reservations($creds['borr_card'], $creds['pin_code']);
+      $loans = alma_client_get_loans($creds['borr_card'], $creds['pin_code']);
 
-        $data['loan_count'] = count($loans);
-        $data['reservation_count'] = count($reservations);
+      $data['loan_count'] = count($loans);
+      $data['reservation_count'] = count($reservations);
 
-        $data['loan_overdue_count'] = 0;
+      $data['loan_overdue_count'] = 0;
 
-        foreach ($loans as $loan) {
-          if ($loan['due_date'] < date('Y-m-d', $_SERVER['REQUEST_TIME'])) {
-            $data['loan_overdue_count']++;
-          }
+      foreach ($loans as $loan) {
+        if ($loan['due_date'] < date('Y-m-d', $_SERVER['REQUEST_TIME'])) {
+          $data['loan_overdue_count']++;
         }
-
-        return $data;
       }
+
+      return $data;
     }
   }
   return FALSE;
