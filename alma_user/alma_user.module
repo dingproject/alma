@@ -353,7 +353,7 @@ function alma_user_login_validate($form, &$form_state) {
     return;
   }
 
-  // Remove everything from numbers from the “name” field to try and
+  // Remove everything but numbers from the “name” field to try and
   // validate it as a library/borrower card.
   $card = preg_replace('/\D+/', '', $form_state['values']['name']);
 
@@ -368,7 +368,7 @@ function alma_user_login_validate($form, &$form_state) {
 
       // If we have Alma credentials and a user was logged in, cache the
       // credentials in our own cache bin.
-      alma_user_cache_credentials($user, $form_state['values']['name'], $form_state['values']['pass']);
+      alma_user_cache_credentials($user, $card, $form_state['values']['pass']);
     }
   }
 }

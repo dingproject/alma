@@ -63,13 +63,20 @@ function alma_user_forms_alma_authenticate($form_state, $account, $explanation=N
  * Validation for authentication form.
  */
 function alma_user_forms_alma_authenticate_validate($form, &$form_state) {
+  // Remove everything but numbers from the borr_card field value.
+  $card = preg_replace('/\D+/', '', $form_state['values']['borr_card']);
+
   // Lookup user data
-  $data = alma_client_get_patron_info($form_state['values']['borr_card'], $form_state['values']['pin_code']);
+  $data = alma_client_get_patron_info($card, $form_state['values']['pin_code']);
 
   // If we got no data or account IDs do not match, it usually means that the
   // user supplied the wrong credentials.
   if (!$data || $data['patron_id'] != $form_state['values']['account']->alma_id) {
     form_set_error('borr_card', t('Invalid borrower card or pin code'));
+  }
+  else {
+    // Validation succeeded, so cache the correct credentials.
+    alma_user_cache_credentials($card, $form_state['values']['borr_card'], $form_state['values']['pin_code']);
   }
 }
 
@@ -77,9 +84,6 @@ function alma_user_forms_alma_authenticate_validate($form, &$form_state) {
  * Submit handler for authentication form.
  */
 function alma_user_forms_alma_authenticate_submit($form, &$form_state) {
-  // Validation succeeded, so cache the correct credentials.
-    alma_user_cache_credentials($form_state['values']['account'], $form_state['values']['borr_card'], $form_state['values']['pin_code']);
-
   // If we do not have a destination already, use the redirect value.
   if (!isset($_REQUEST['destination']) && $form_state['values']['redirect']) {
     // If redirect is boolean TRUE, use the default redirect.
