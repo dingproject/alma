@@ -135,7 +135,7 @@ function alma_cart_page_reserve_item($item_id, $reservable = NULL) {
           '@item' => $object->title,
           '@branch' => $branch_names[$account->preferred_branch],
         ));
-        $reply['cart_link'] = url('user/' . $account . '/status');
+        $reply['cart_link'] = url('user/' . $account->uid . '/status');
       }
       else {
         $reply['status'] = 'error';
