@@ -264,7 +264,6 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
     	$args = array();
     	user_module_invoke('load', $args, $user);
 
-    	krumo($user);
     	$form['name']["#default_value"] = (isset($user->display_name) && $user->display_name) ? $user->display_name : $user->name;
     	break;
   }
