@@ -378,9 +378,9 @@ function alma_user_forms_reservation_details_validate($form, &$form_state) {
           $data['new_expiry'])) { // or alter expiry date
         $response = alma_client_catalogue_record_detail($reservation['record_id']);
         if ($response['request_status'] == 'ok' && ($record = array_shift($response['records']))) {
-        	form_set_error('reservations', t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $record['titles'][0], '!branch' => $branches[$reservation['pickup_branch']])));
+        	form_set_error('reservations]['.$id, t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $record['titles'][0], '!branch' => $branches[$reservation['pickup_branch']])));
         } else {
-          form_set_error('reservations', t('You can not perform changes to reservations which are ready for pick up'));
+          form_set_error('reservations]['.$id, t('You can not perform changes to reservations which are ready for pick up'));
         }
       }
     }
