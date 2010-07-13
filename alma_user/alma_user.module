@@ -542,7 +542,7 @@ function alma_user_cache_credentials($account, $borr_card, $pin_code) {
 function alma_user_get_cache_key($account) {
   // The cache key is based on uid, login time and IP adresses.
   // This should provide a reasonable level of security against hijacking.
-  return md5($account->uid . $account->login . $_SERVER['REMOTE_ADDR']);
+  return md5($account->uid . $account->login . ip_address());
 }
 
 /**
