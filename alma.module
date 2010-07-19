@@ -372,12 +372,12 @@ function alma_client_get_patron_info($borr_card, $pin_code, $extended = FALSE) {
     return alma_client()->get_patron_info($borr_card, $pin_code, $extended);
   }
   catch (AlmaClientBorrCardNotFound $e) {
-    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', t('get_patron_info error: “@message”', array('@message' => $e->getMessage())), array('exception' => $e), WATCHDOG_ERROR);
     return FALSE;
   }
   catch (Exception $e) {
     drupal_set_message(t('An error occurred while trying to communicate with the library system. Please try again'), 'error', FALSE);
-    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', t('get_patron_info error: “@message”', array('@message' => $e->getMessage())), array('exception' => $e), WATCHDOG_ERROR);
     return FALSE;
   }
 }
