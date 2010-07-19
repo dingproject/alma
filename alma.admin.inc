@@ -19,7 +19,13 @@ function alma_admin_settings_form($form_state) {
     '#required' => TRUE,
     '#default_value' => variable_get('alma_base_url', ''),
   );
-
+  $form['alma_enable_logging'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable logging'),
+    '#default_value' => variable_get('alma_enable_logging', ''),
+    '#description' => t('Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests'),
+  );
+  
   return system_settings_form($form);
 }
 
