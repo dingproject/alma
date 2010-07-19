@@ -89,6 +89,7 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
         $account->alma_id = $data['alma_id'];
         $account->preferred_branch = $data['preferred_branch'];
         $account->interest_period = $data['interest_period'];
+        $account->message_services = ($data['message_services']) ? unserialize($data['message_services']) : NULL;
       }
       break;
     case 'delete':
@@ -332,6 +333,18 @@ function alma_user_profile_submit($form, &$form_state) {
       // If a phone number doesn't exist, add a new one.
       alma_client_add_phone_number($creds['borr_card'], $creds['pin_code'], $form_state['values']['alma_user_phone']);
     }
+
+    // If user does not already have a SMS message service then add one
+    if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) || 
+        !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
+	    // Add a due date alerts as SMS service per default 
+	    alma_client_add_message_service($creds['borr_card'], $creds['pin_code'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+	    
+	    // Update local user settings accordingly
+	    $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
+	    $alma_user = array('uid' => $account->uid, 'message_services' => serialize($message_services));
+	    drupal_write_record('alma_user', $alma_user, 'uid');
+    }
   }
   elseif (!empty($patron['phones'])) {
     // If the user has cleared out his phone number field, remove all
@@ -340,6 +353,14 @@ function alma_user_profile_submit($form, &$form_state) {
     foreach ($patron['phones'] as $phone) {
       alma_client_remove_phone_number($creds['borr_card'], $creds['pin_code'], $phone['phone']);
     }
+
+    // Also remove SMS messaging service
+    alma_client_remove_message_service($creds['borr_card'], $creds['pin_code'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+    
+    // Update local user settings accordingly
+    unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
+    $alma_user = array('uid' => $account->uid, 'message_services' => serialize($account->message_services));
+    drupal_write_record('alma_user', $alma_user, 'uid');
   }
 }
 

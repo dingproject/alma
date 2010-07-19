@@ -1,6 +1,13 @@
 <?php
 // $Id$
 
+define('ALMA_SERVICE_TYPE_DUE_DATE_ALERT', 'dueDateAlert');
+define('ALMA_SERVICE_TYPE_LIBRARY_MESSAGE', 'libraryMessage');
+define('ALMA_SERVICE_TYPE_OVERDUE_NOTICE', 'overdueNotice');
+define('ALMA_SERVICE_TYPE_PICK_UP_NOTICE', 'pickUpNotice');
+
+define('ALMA_SERVICE_METHOD_SMS', 'sms');
+
 /**
  * @file AlmaClient.php
  * Provides a client for the Axiell Alma library information webservice.
@@ -837,6 +844,57 @@ class AlmaClient {
     $doc = $this->request('patron/absentPeriod/remove', $params);
     return TRUE;
   }
+  
+  /**
+   * Add a messaging service.
+   *
+   * @param string $borr_card
+   *    Library patron's borrowing card number. Either just an arbitrary
+   *    number printed on their library card or their CPR-code.
+   * @param string $pin_code
+   *    Library patron's current four digit PIN code.
+   * @param $method
+   *    The method for sending messages e.g. SMS
+   * @param $type
+   *    The message type e.g. due date alerts
+   */
+  public function add_message_service($borr_card, $pin_code, $method, $type) {
+    $params = array(
+      'borrCard' => $borr_card,
+      'pinCode' => $pin_code,
+      'sendMethod' => $method,
+      'serviceType' => $type
+    );
+
+    $doc = $this->request('patron/messageServices/add', $params);
+    return TRUE;
+  }
+
+  /**
+   * Removes a messaging service.
+   *
+   * @param string $borr_card
+   *    Library patron's borrowing card number. Either just an arbitrary
+   *    number printed on their library card or their CPR-code.
+   * @param string $pin_code
+   *    Library patron's current four digit PIN code.
+   * @param $method
+   *    The method for sending messages e.g. SMS
+   * @param $type
+   *    The message type e.g. due date alerts
+   */
+  public function remove_message_service($borr_card, $pin_code, $method, $type) {
+    $params = array(
+      'borrCard' => $borr_card,
+      'pinCode' => $pin_code,
+      'sendMethod' => $method,
+      'serviceType' => $type
+    );
+
+    $doc = $this->request('patron/messageServices/remove', $params);
+    return TRUE;
+  }  
+  
 }
 
 /**

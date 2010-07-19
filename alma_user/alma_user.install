@@ -60,6 +60,10 @@ function alma_user_schema() {
         'unsigned' => TRUE,
         'size' => 'small',
       ),
+      'message_services' => array(
+        'description' => 'User message service preferences.',
+        'type' => 'text',
+      ),
     ),
     'primary key' => array('uid'),
     'unique keys' => array(
@@ -133,3 +137,17 @@ function alma_user_update_6005() {
   return $ret;
 }
 
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add field for storing message service preferences
+ */
+function alma_user_update_6006() {
+  $ret = array();
+  db_add_field($ret, 'alma_user', 'message_services', array(
+    'type' => 'text',
+    'description' => 'User message service preferences.',
+  ));
+  return $ret;
+}
