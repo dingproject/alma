@@ -369,22 +369,24 @@ function alma_user_forms_reservation_details_validate($form, &$form_state) {
 	$data = $form_state['values'];
 
 	// Prevent users from updating reservations which is ready for pickup at a branch
-  $branches = alma_client_get_branches();
-	foreach ($data['reservations'] as $id => $selected) {
-    if ($selected == 1) {
-    	$reservation = $data['reservation_data'][$id]; 
-      if (($reservation['status'] == 'fetchable') && // Detect fetable reservations...
-          (($reservation['pickup_branch'] != $data['new_pickup_branch']) || // where the user tried to alter pickup branch
-          $data['new_expiry'])) { // or alter expiry date
-        $response = alma_client_catalogue_record_detail($reservation['record_id']);
-        if ($response['request_status'] == 'ok' && ($record = array_shift($response['records']))) {
-        	form_set_error('reservations]['.$id, t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $record['titles'][0], '!branch' => $branches[$reservation['pickup_branch']])));
-        } else {
-          form_set_error('reservations]['.$id, t('You can not perform changes to reservations which are ready for pick up'));
-        }
-      }
-    }
-  }
+	if (strpos($form_state['clicked_button']['#attributes']['class'], 'update-button') !== FALSE) {
+	  $branches = alma_client_get_branches();
+		foreach ($data['reservations'] as $id => $selected) {
+	    if ($selected == 1) {
+	    	$reservation = $data['reservation_data'][$id]; 
+	      if (($reservation['status'] == 'fetchable') && // Detect fetable reservations...
+	          (($reservation['pickup_branch'] != $data['new_pickup_branch']) || // where the user tried to alter pickup branch
+	          $data['new_expiry'])) { // or alter expiry date
+	        $response = alma_client_catalogue_record_detail($reservation['record_id']);
+	        if ($response['request_status'] == 'ok' && ($record = array_shift($response['records']))) {
+	        	form_set_error('reservations]['.$id, t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $record['titles'][0], '!branch' => $branches[$reservation['pickup_branch']])));
+	        } else {
+	          form_set_error('reservations]['.$id, t('You can not perform changes to reservations which are ready for pick up'));
+	        }
+	      }
+	    }
+	  }
+	}
   
 	if (!empty($data['new_expiry'])) {
     list($year, $month, $day) = explode('-', trim($data['new_expiry']));
