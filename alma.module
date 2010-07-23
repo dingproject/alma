@@ -195,7 +195,7 @@ function alma_client_get_reservation_branches($optional=TRUE, $reset=FALSE) {
       }
 
     } catch (Exception $e) {
-      watchdog('alma_user', 'get_reservation_branches error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      watchdog('alma_user', 'get_reservation_branches error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
       return array();
     }
 
@@ -234,7 +234,7 @@ function alma_client_get_departments($reset=FALSE) {
       }
 
     } catch (Exception $e) {
-      watchdog('alma_user', 'get_departments error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      watchdog('alma_user', 'get_departments error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
       return array();
     }
 
@@ -270,7 +270,7 @@ function alma_client_get_locations($reset=FALSE) {
       }
 
     } catch (Exception $e) {
-      watchdog('alma_user', 'get_locations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      watchdog('alma_user', 'get_locations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
       return array();
     }
 
@@ -306,7 +306,7 @@ function alma_client_get_sublocations($reset=FALSE) {
       }
 
     } catch (Exception $e) {
-      watchdog('alma_user', 'get_sublocations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      watchdog('alma_user', 'get_sublocations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
       return array();
     }
 
@@ -342,7 +342,7 @@ function alma_client_get_collections($reset=FALSE) {
       }
 
     } catch (Exception $e) {
-      watchdog('alma_user', 'get_collections error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+      watchdog('alma_user', 'get_collections error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
       return array();
     }
 
@@ -372,12 +372,12 @@ function alma_client_get_patron_info($borr_card, $pin_code, $extended = FALSE) {
     return alma_client()->get_patron_info($borr_card, $pin_code, $extended);
   }
   catch (AlmaClientBorrCardNotFound $e) {
-    watchdog('alma_user', t('get_patron_info error: “@message”', array('@message' => $e->getMessage())), array('exception' => $e), WATCHDOG_ERROR);
+    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
   catch (Exception $e) {
     drupal_set_message(t('An error occurred while trying to communicate with the library system. Please try again'), 'error', FALSE);
-    watchdog('alma_user', t('get_patron_info error: “@message”', array('@message' => $e->getMessage())), array('exception' => $e), WATCHDOG_ERROR);
+    watchdog('alma_user', 'get_patron_info error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -397,7 +397,7 @@ function alma_client_get_reservations($borr_card, $pin_code) {
   try {
     return alma_client()->get_reservations($borr_card, $pin_code);
   } catch (Exception $e) {
-    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -417,7 +417,7 @@ function alma_client_get_loans($borr_card, $pin_code) {
   try {
     return alma_client()->get_loans($borr_card, $pin_code);
   } catch (Exception $e) {
-    watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -437,7 +437,7 @@ function alma_client_get_debts($borr_card, $pin_code) {
   try {
     return alma_client()->get_debts($borr_card, $pin_code);
   } catch (Exception $e) {
-    watchdog('alma_user', 'get_debts error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'get_debts error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -468,7 +468,7 @@ function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
     return alma_client()->add_reservation($borr_card, $pin_code, $reservation);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'add_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'add_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -491,7 +491,7 @@ function alma_client_change_reservation($borr_card, $pin_code, $reservation, $ch
     return alma_client()->change_reservation($borr_card, $pin_code, $reservation, $changes);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'change_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -512,7 +512,7 @@ function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
     return alma_client()->remove_reservation($borr_card, $pin_code, $reservation);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'remove_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'remove_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -533,7 +533,7 @@ function alma_client_renew_loan($borr_card, $pin_code, $loan_ids) {
     return alma_client()->renew_loan($borr_card, $pin_code, $loan_ids);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -556,7 +556,7 @@ function alma_client_add_phone_number($borr_card, $pin_code, $number, $sms = TRU
     return alma_client()->add_phone_number($borr_card, $pin_code, $number, $sms);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'add_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'add_phone_number error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -581,7 +581,7 @@ function alma_client_change_phone_number($borr_card, $pin_code, $number_id, $new
     return alma_client()->change_phone_number($borr_card, $pin_code, $number_id, $new_number, $sms);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'change_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_phone_number error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -602,7 +602,7 @@ function alma_client_remove_phone_number($borr_card, $pin_code, $number_id) {
     return alma_client()->remove_phone_number($borr_card, $pin_code, $number_id);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'remove_phone_number error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'remove_phone_number error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -623,7 +623,7 @@ function alma_client_add_email_address($borr_card, $pin_code, $new_email) {
     return alma_client()->add_email_address($borr_card, $pin_code, $new_email);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'add_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'add_email_address error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -646,7 +646,7 @@ function alma_client_change_email_address($borr_card, $pin_code, $email_id, $new
     return alma_client()->change_email_address($borr_card, $pin_code, $email_id, $new_email);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'change_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_email_address error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -667,7 +667,7 @@ function alma_client_remove_email_address($borr_card, $pin_code, $email_id) {
     return alma_client()->remove_email_address($borr_card, $pin_code, $email_id);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'remove_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'remove_email_address error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -688,7 +688,7 @@ function alma_client_change_pin($borr_card, $pin_code, $new_pin) {
     return alma_client()->change_pin($borr_card, $pin_code, $new_pin);
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'change_pin error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_pin error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -715,7 +715,7 @@ function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
     }
   }
   catch (Exception $e) {
-    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 
   return FALSE;
@@ -738,7 +738,7 @@ function alma_client_catalogue_record_detail($alma_ids) {
     $data = alma_client()->catalogue_record_detail($alma_ids);
     if (empty($data)) { return array(); }
   } catch (Exception $e) {
-    watchdog('alma_user', 'catalogue_record_detail error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'catalogue_record_detail error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 
   return $data;
@@ -763,7 +763,7 @@ function alma_client_get_availability($alma_ids) {
     $data = alma_client()->get_availability($alma_ids);
     if (empty($data)) { return array(); }
   } catch (Exception $e) {
-    watchdog('alma_user', 'get_availability error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'get_availability error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
   // Cache output for 8 hours.
   cache_set('get_availability:' . $alma_ids, $data, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
@@ -780,7 +780,7 @@ function alma_client_add_payment($debt_ids, $order_id = NULL) {
   try {
     $data = alma_client()->add_payment($debt_ids, $order_id);
   } catch (Exception $e) {
-    watchdog('alma_user', 'add_payment error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'add_payment error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -799,7 +799,7 @@ function alma_client_change_patron_preferences($borr_card, $pin_code, $branch_co
   try {
     $data = alma_client()->change_patron_preferences($borr_card, $pin_code, $branch_code);
   } catch (Exception $e) {
-    watchdog('alma_user', 'change_patron_preferences error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_patron_preferences error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -820,7 +820,7 @@ function alma_client_add_absent_period($borr_card, $pin_code, $from_date, $to_da
   try {
     $data = alma_client()->add_absent_period($borr_card, $pin_code, $from_date, $to_date);
   } catch (Exception $e) {
-    watchdog('alma_user', 'add_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'add_absent_period error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -843,7 +843,7 @@ function alma_client_change_absent_period($borr_card, $pin_code, $absent_id, $fr
   try {
     $data = alma_client()->change_absent_period($borr_card, $pin_code, $absent_id, $from_date, $to_date);
   } catch (Exception $e) {
-    watchdog('alma_user', 'change_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'change_absent_period error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -862,7 +862,7 @@ function alma_client_remove_absent_period($borr_card, $pin_code, $absent_id) {
   try {
     $data = alma_client()->remove_absent_period($borr_card, $pin_code, $absent_id);
   } catch (Exception $e) {
-    watchdog('alma_user', 'remove_absent_period error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    watchdog('alma_user', 'remove_absent_period error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -883,7 +883,7 @@ function alma_client_add_message_service($borr_card, $pin_code, $method, $type) 
   try {
     $data = alma_client()->add_message_service($borr_card, $pin_code, $method, $type);
   } catch (Exception $e) {
-    watchdog('alma_user', t('add_message_service error: “@message”', array('@message' => $e->getMessage())), array('exeception' => $e), WATCHDOG_ERROR);
+    watchdog('alma_user', 'add_message_service error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
@@ -904,7 +904,7 @@ function alma_client_remove_message_service($borr_card, $pin_code, $method, $typ
   try {
     $data = alma_client()->remove_message_service($borr_card, $pin_code, $method, $type);
   } catch (Exception $e) {
-    watchdog('alma_user', t('remove_message_service error: “@message”', array('@message' => $e->getMessage())), array('exeception' => $e), WATCHDOG_ERROR);
+    watchdog('alma_user', 'remove_message_service error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
 
