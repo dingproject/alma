@@ -59,7 +59,7 @@ class AlmaClient {
   	if (variable_get('alma_enable_logging', FALSE)) {
   		$log_params = self::filter_request_params($params);
       // Log the request  		 		
-      watchdog('alma_user', 'Sending request: '. url($this->base_url . $method, array('query' => $log_params)), NULL, WATCHDOG_DEBUG);  		
+      watchdog('alma', 'Sending request: '. url($this->base_url . $method, array('query' => $log_params)), NULL, WATCHDOG_DEBUG);  		
   	}
   	
     // For use with a non-Drupal-system, we should have a way to swap
