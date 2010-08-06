@@ -1,0 +1,7 @@
+Alma module for Drupal
+======================
+
+Implements the Alma API for the DDELibra library system by Axiell AB.
+
+Part of [TING.concept](http://ting.dk/).
+
