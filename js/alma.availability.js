@@ -97,28 +97,20 @@ Drupal.almaAvailability.updateStatus = function (data, textStatus) {
  * Format a holding as readable text.
  */
 Drupal.almaAvailability.formatHolding = function (item, holding) {
-  var output = Drupal.settings.alma.branches[holding.branch_id];
+  var locations = [Drupal.settings.alma.branches[holding.branch_id]];
 
-  if (holding.department_id && Drupal.settings.alma.departments[holding.department_id]) {
-    output += ' → ' + Drupal.settings.alma.departments[holding.department_id];
-  }
-
-  if (holding.location_id && Drupal.settings.alma.locations[holding.location_id]) {
-    output += ' → ' + Drupal.settings.alma.locations[holding.location_id];
-  }
-
-  if (holding.sublocation_id && Drupal.settings.alma.sublocations[holding.sublocation_id]) {
-    output += ' → ' + Drupal.settings.alma.sublocations[holding.sublocation_id];
-  }
-
-  if (holding.collection_id && Drupal.settings.alma.collections[holding.collection_id]) {
-    output += ' → ' + Drupal.settings.alma.collections[holding.collection_id];
-  }
+  // Take each location type ID and look it up in our department data.
+  // If a match is found, add it to the locations array.
+  $.each(['department_id', 'location_id', 'sublocation_id', 'collection_id'], function (index, key) {
+    if (holding[key] && Drupal.settings.alma.departments[holding[key]]) {
+      locations.push(Drupal.settings.alma.departments[holding[key]]);
+    }
+  });
 
   if (holding.shelf_mark) {
-    output += holding.shelf_mark;
+    locations.push(holding.shelf_mark);
   }
 
-  return output;
+  return locations.join(' → ');
 };
 
