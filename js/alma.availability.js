@@ -97,20 +97,29 @@ Drupal.almaAvailability.updateStatus = function (data, textStatus) {
  * Format a holding as readable text.
  */
 Drupal.almaAvailability.formatHolding = function (item, holding) {
-  var locations = [Drupal.settings.alma.branches[holding.branch_id]];
+  var locations = [Drupal.settings.alma.branches[holding.branch_id]], output;
 
   // Take each location type ID and look it up in our department data.
   // If a match is found, add it to the locations array.
-  $.each(['department_id', 'location_id', 'sublocation_id', 'collection_id'], function (index, key) {
-    if (holding[key] && Drupal.settings.alma.departments[holding[key]]) {
-      locations.push(Drupal.settings.alma.departments[holding[key]]);
+  $.each(['department', 'location', 'sublocation', 'collection'], function (index, location_type) {
+    var location_id = holding[location_type + '_id'], location_name;
+
+    if (location_id) {
+      location_name = Drupal.settings.alma[location_type + 's'][location_id];
+    }
+
+    if (location_name) {
+      locations.push(location_name);
     }
   });
 
+  output = locations.join(' → ');
+
+  // Shelf mark includes a '>', so we add it after joining with arrows.
   if (holding.shelf_mark) {
-    locations.push(holding.shelf_mark);
+    output += (holding.shelf_mark);
   }
 
-  return locations.join(' → ');
+  return output;
 };
 
