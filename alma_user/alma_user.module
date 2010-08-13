@@ -195,8 +195,15 @@ function alma_user_ctools_plugin_directory($module, $plugin) {
  */
 function alma_user_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
-    case 'user_login':
     case 'user_login_block':
+      // Set the POST callback to point to the main user login page to
+      // avoid caching issues.
+      $form['#action'] = url('user/login', array(
+        'query' => array('destination' => drupal_get_path_alias($_GET['q'])),
+      ));
+
+      // The next case also applies to user_login_block, so no break;
+    case 'user_login':
       // Since the login name can be a user's CPR-number, that too is hidden.
       $form['name']['#type'] = 'password';
 
