@@ -28,15 +28,24 @@ function theme_alma_cart_reservation_buttons($object) {
   jquery_ui_theme_load();
   drupal_add_js(drupal_get_path('module', 'alma_cart') . '/alma_cart.buttons.js');
 
+
+  // Netdocuments have special proxy URLs we link to.
   if ($object->type == 'Netdokument') {
-    $output = theme('item_list', array(
+    return theme('item_list', array(
       l(t('View on-line'),  $object->online_url, array('attributes' => array('class' => 'view-online'))),
     ), NULL, 'ul', array('class' => 'buttons orange-button'));
-    return $output;
   }
-  // For all the object types we don’t want to provide reservation
+  // Audiobooks or similar have a link in their metadata we display.
+  elseif ($object->type == 'Lydbog (online)') {
+    if (!empty($object->record['dc:identifier']['dcterms:URI'])) {
+      return theme('item_list', array(
+        l(t('View on-line'),  $object->record['dc:identifier']['dcterms:URI'][0], array('attributes' => array('class' => 'view-online'))),
+      ), NULL, 'ul', array('class' => 'buttons orange-button'));
+    }
+  }
+  // For all the other object types we don’t want to provide reservation
   // buttons for.
-  elseif (in_array($object->type, array('Artikel'))) {
+  elseif ($object->type == 'Artikel') {
     return;
   }
   elseif (!empty($object->localId)) {
