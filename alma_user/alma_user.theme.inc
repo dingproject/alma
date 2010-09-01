@@ -312,7 +312,7 @@ function theme_alma_user_forms_loan_details($form) {
       else {
         $cells['checkbox'] = array(
           'class' => 'checkbox empty',
-          'data' => '–',
+          'data' => theme('image', drupal_get_path('module', 'alma_user').'/img/checkbox-blocked.jpg', t('Unable to renew loan'), t('Unable to renew loan')),
         );
       }
 
