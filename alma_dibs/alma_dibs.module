@@ -9,7 +9,7 @@
 /**
  * Implementation of hook_ding_add_payment().
  */
-function alma_ding_add_payment($transaction) {
+function alma_ding_dibs_add_payment($transaction) {
   alma_client_add_payment(implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
 }
 
