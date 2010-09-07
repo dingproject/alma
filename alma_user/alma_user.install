@@ -31,12 +31,6 @@ function alma_user_schema() {
   $schema['alma_user'] = array(
     'description' => t('Keep track of the information tying Drupal users to Alma patrons.'),
     'fields' => array(
-      'uid' => array(
-        'description' => '{users}.uid for user',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
       'alma_id' => array(
         'description' => 'Alma ID.',
         'type' => 'varchar',
@@ -65,13 +59,8 @@ function alma_user_schema() {
         'type' => 'text',
       ),
     ),
-    'primary key' => array('uid'),
-    'unique keys' => array(
-      'borr_card' => array('alma_id')
-    ),
+    'primary key' => array('alma_id'),
   );
-
-  $schema['cache_alma_credentials'] = drupal_get_schema_unprocessed('system', 'cache');
 
   return $schema;
 }
@@ -137,7 +126,6 @@ function alma_user_update_6005() {
   return $ret;
 }
 
-
 /**
  * Implementation of hook_update_N().
  *
@@ -151,3 +139,18 @@ function alma_user_update_6006() {
   ));
   return $ret;
 }
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Refactorings for ding_library_user:
+ * - Remove credentials cache
+ * - Set weight to 10 - ding_library_user is 0
+ */
+function alma_user_update_6007() {
+  $ret = array();
+  db_drop_table($ret, 'cache_alma_credentials');
+  $ret[] = update_sql('UPDATE system SET weight = 10 WHERE name = "alma_user"');
+  return $ret;
+}
+
