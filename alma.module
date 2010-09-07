@@ -74,6 +74,28 @@ function alma_requirements($phase) {
 }
 
 /**
+ * Implements hook_ding_get_branches()
+ */
+function alma_ding_get_branches($optional=TRUE, $reset=FALSE) {
+  return alma_client_get_branches($optional, $reset);	
+}
+
+/**
+ * Implements hook_ding_get_reservation_branches().
+ */
+function alma_ding_get_reservation_branches($optional = TRUE, $reset = FALSE) {
+	return alma_client_get_reservation_branches($optional, $reset);
+}
+
+/**
+ * Implements hook_ding_get_object_details().
+ */
+function alma_ding_get_object_details($ids) {
+	$records = alma_client_catalogue_record_detail($ids);
+	return $records;
+}
+
+/**
  * Return a fully instantiated AlmaClient instance.
  */
 function alma_client() {
