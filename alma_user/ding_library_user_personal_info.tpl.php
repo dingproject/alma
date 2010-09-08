@@ -10,7 +10,7 @@
   <h4><?php print t('Basic information'); ?></h4>
   <dl>
     <dt><?php print t('Name'); ?></dt>
-    <dd class="fn"><?php print check_plain($alma_data['patron_name']); ?></dd>
+    <dd class="fn"><?php print check_plain($alma_data['user_name']); ?></dd>
     <dt><?php print t('Address'); ?></dt>
     <dd class="adr">
       <div class="street-address"><?php print check_plain($alma_data['addresses'][0]['street']); ?></div>
