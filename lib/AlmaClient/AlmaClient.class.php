@@ -244,8 +244,8 @@ class AlmaClient {
     $info = $doc->getElementsByTagName($info_node)->item(0);
 
     $data = array(
-      'patron_id' => $info->getAttribute('patronId'),
-      'patron_name' => $info->getAttribute('patronName'),
+      'user_id' => $info->getAttribute('patronId'),
+      'user_name' => $info->getAttribute('patronName'),
       'addresses' => array(),
       'mails' => array(),
       'phones' => array(),
