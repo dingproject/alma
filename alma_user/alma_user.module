@@ -317,14 +317,27 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
       case 'branch':
         alma_client()->change_patron_preferences($creds['user_id'], $creds['password'], $value);
       break;
-      case 'email': 
-        alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['email'], $value);
+      case 'email':
+        if (empty($old_info['email']) && !empty($value)) {
+          alma_client()->add_email_address($creds['user_id'], $creds['password'], $value);
+        }
+        elseif (!empty($old_info['email']) && !empty($value)) {
+          alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['email'], $value);
+        }
       break;
       case 'password':
         alma_client()->change_pin($creds['user_id'], $creds['password'], $value);
       break;
       case 'phone':
-        alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phone'], $value);
+        if (!empty($value) && empty($old_info['phone'])) {
+          alma_client()->add_phone_number($creds['user_id'], $creds['password'], $value);
+        }
+        if (empty($value) && !empty($old_info['phone'])) {
+          alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $value);
+        }
+        else {
+          alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phone'], $value);
+        }
       break;
     }
   }
