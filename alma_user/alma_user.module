@@ -1,4 +1,4 @@
-<?php
+<?php
 // $Id$
 
 /**
@@ -285,9 +285,49 @@ function alma_user_ding_library_user_get_debts($creds) {
 
 /**
  * Implements hook_ding_library_user_update_info().
+ *
+ * @param Array $creds 
+ * @param Array $new_info 
+ * $new_info = array(
+ *   'absent' => array(
+ *    'id' => '',
+ *    'from_date' => '',
+ *    'to_date' => '',
+ *  ),
+ *  'branch' => '',
+ *  'email' => '',
+ *  'password' => '',
+ *  'phone' => '',
+ *  );
+ * @param Array $old_info 
+ * @return void
  */
+
 function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = FALSE) {
-	// TODO: Do stuff to this :)
+  foreach ($new_info as $field_name => $value) {
+    
+    if ($old_info && array_key_exists($field_name, $old_info) && $old_info[$field_name] == $value) {
+      continue;
+    }
+    
+    switch ($field_name) {
+      case 'absent':
+        alma_client()->change_absent_period($creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
+      break;
+      case 'branch':
+        alma_client()->change_patron_preferences($creds['user_id'], $creds['password'], $value);
+      break;
+      case 'email': 
+        alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['email'], $value);
+      break;
+      case 'password':
+        alma_client()->change_pin($creds['user_id'], $creds['password'], $value);
+      break;
+      case 'phone':
+        alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phone'], $value);
+      break;
+    }
+  }
 }
 
 /**
