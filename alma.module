@@ -26,24 +26,6 @@ function alma_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['alma/item/%/availability'] = array(
-    'title' => 'Get Alma availability',
-    'description' => 'Get Alma availability for items.',
-    'page callback' => 'alma_item_availability_page',
-    'page arguments' => array(2),
-    'access arguments' => array('access content'),
-    'file' => 'alma.pages.inc',
-  );
-
-  $items['alma/item/%/details'] = array(
-    'title' => 'Get Alma details',
-    'description' => 'Get all Alma details for items. Availability, location, etc.',
-    'page callback' => 'alma_item_details_page',
-    'page arguments' => array(2),
-    'access arguments' => array('access content'),
-    'file' => 'alma.pages.inc',
-  );
-
   return $items;
 }
 
@@ -76,15 +58,22 @@ function alma_requirements($phase) {
 /**
  * Implements hook_ding_get_branches()
  */
-function alma_ding_get_branches($optional=TRUE, $reset=FALSE) {
+function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
   return alma_client_get_branches($optional, $reset);	
 }
 
 /**
  * Implements hook_ding_get_reservation_branches().
  */
-function alma_ding_get_reservation_branches($optional = TRUE, $reset = FALSE) {
+function alma_ding_library_get_reservation_branches($optional = TRUE, $reset = FALSE) {
 	return alma_client_get_reservation_branches($optional, $reset);
+}
+
+/**
+ * Implements hook_ding_library_get_organisation().
+ */
+function alma_ding_library_get_organisation() {
+	return alma_get_organisation();
 }
 
 /**
@@ -93,6 +82,28 @@ function alma_ding_get_reservation_branches($optional = TRUE, $reset = FALSE) {
 function alma_ding_get_object_details($ids) {
 	$records = alma_client_catalogue_record_detail($ids);
 	return $records;
+}
+
+/**
+ * Implements hook_ting_availability_item().
+ */
+function alma_ting_availability_item($input) {
+	$availability = alma_client_get_availability($input);
+	return $availability;
+}
+
+/**
+ * Implements hook_ting_availability_item_details().
+ */
+function alma_ting_availability_item_details($input) {
+  $details = alma_client_catalogue_record_detail($input);
+
+  // Use alma ids a local ids
+  foreach ($details['records'] as &$record) {
+    $record['local_id'] = $record['alma_id'];	
+  } 
+  
+  return $details;
 }
 
 /**
@@ -927,34 +938,6 @@ function alma_client_remove_message_service($borr_card, $pin_code, $method, $typ
     $data = alma_client()->remove_message_service($borr_card, $pin_code, $method, $type);
   } catch (Exception $e) {
     watchdog('alma_user', 'remove_message_service error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-}
-
-/**
- * Helper function that adds our JavaScript behaviors.
- *
- * @param string $page_type
- *    The type of page we're adding JavaScript for. Different pages gets
- *    different things.
- */
-function alma_add_js($page_type) {
-  // Static variable to avoid to adding data more than once.
-  static $called;
-  if (!$called) {
-    drupal_add_js(array('alma' => alma_get_organisation()), 'setting');
-    $called = TRUE;
-  }
-
-  $path = drupal_get_path('module', 'alma') . '/js';
-  switch ($page_type) {
-    case 'ting_object_view':
-      drupal_add_js($path . '/alma.availability.js', 'module', 'footer', TRUE);
-      drupal_add_js($path . '/alma.availability.ting_object_view.js', 'module', 'footer', TRUE);
-      break;
-    case 'ting_collection_view':
-      drupal_add_js($path . '/alma.availability.js', 'module', 'footer', TRUE);
-      drupal_add_js('$(function(){Drupal.almaAvailability.get_details(Drupal.almaAvailability.updateStatus)});', 'inline', 'footer', TRUE);
-      break;
   }
 }
 
