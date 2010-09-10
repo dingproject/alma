@@ -123,54 +123,6 @@ function alma_user_profile_validate($form, &$form_state) {
 }
 
 /**
- * Submit handler for the user profile form.
- */
-function alma_user_profile_submit($form, &$form_state) {
-  $account = $form['_account']['#value'];
-  $creds = ding_library_user_get_credentials($account);
-  $user_info = $form_state['values']['ding_library_user_info'];
-
-  if (!empty($form_state['values']['alma_user_phone'])) {
-    if (!empty($user_info['phones'])) {
-      // If user has a phone number, update it.
-      alma_client_change_phone_number($creds['borr_card'], $creds['pin_code'], $user_info['phones'][0]['id'], $form_state['values']['alma_user_phone']);
-    }
-    else {
-      // If a phone number doesn't exist, add a new one.
-      alma_client_add_phone_number($creds['borr_card'], $creds['pin_code'], $form_state['values']['alma_user_phone']);
-    }
-
-    // If user does not already have a SMS message service then add one
-    if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) || 
-        !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
-	    // Add a due date alerts as SMS service per default 
-	    alma_client_add_message_service($creds['borr_card'], $creds['pin_code'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
-	    
-	    // Update local user settings accordingly
-	    $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
-	    $alma_user = array('uid' => $account->uid, 'message_services' => serialize($message_services));
-	    drupal_write_record('alma_user', $alma_user, 'uid');
-    }
-  }
-  elseif (!empty($user_info['phones'])) {
-    // If the user has cleared out his phone number field, remove all
-    // phone numbers from the database (not just the first, since then
-    // one of the others will just take its place, confusing the user).
-    foreach ($user_info['phones'] as $phone) {
-      alma_client_remove_phone_number($creds['borr_card'], $creds['pin_code'], $phone['phone']);
-    }
-
-    // Also remove SMS messaging service
-    alma_client_remove_message_service($creds['borr_card'], $creds['pin_code'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
-    
-    // Update local user settings accordingly
-    unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
-    $alma_user = array('uid' => $account->uid, 'message_services' => serialize($account->message_services));
-    drupal_write_record('alma_user', $alma_user, 'uid');
-  }
-}
-
-/**
  * Validation for the login form.
  */
 function alma_user_login_validate($form, &$form_state) {
@@ -305,7 +257,7 @@ function alma_user_ding_library_user_get_debts($creds) {
 
 function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = FALSE) {
   foreach ($new_info as $field_name => $value) {
-    
+      
     if ($old_info && array_key_exists($field_name, $old_info) && $old_info[$field_name] == $value) {
       continue;
     }
@@ -318,25 +270,48 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
         alma_client()->change_patron_preferences($creds['user_id'], $creds['password'], $value);
       break;
       case 'email':
-        if (empty($old_info['email']) && !empty($value)) {
+        if (empty($old_info['mails'][0]['id']) && !empty($value)) {
           alma_client()->add_email_address($creds['user_id'], $creds['password'], $value);
         }
-        elseif (!empty($old_info['email']) && !empty($value)) {
-          alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['email'], $value);
+        elseif (!empty($old_info['mails'][0]['id']) && !empty($value)) {
+          alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $value);
         }
       break;
       case 'password':
         alma_client()->change_pin($creds['user_id'], $creds['password'], $value);
       break;
-      case 'phone':
-        if (!empty($value) && empty($old_info['phone'])) {
-          alma_client()->add_phone_number($creds['user_id'], $creds['password'], $value);
-        }
-        if (empty($value) && !empty($old_info['phone'])) {
-          alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $value);
+      case 'phones':
+        if (!empty($value)) {
+          if (empty($old_info['phones'][0]['id'])) {
+            alma_client()->add_phone_number($creds['user_id'], $creds['password'], $value);
+          }
+          else {
+            alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
+          }
+          // If user does not already have a SMS message service then add one
+          if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) || 
+              !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
+            // Add a due date alerts as SMS service per default 
+            alma_client()->add_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+  
+            // Update local user settings accordingly
+            $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
+            $alma_user = array('alma_id' => $account->uid, 'message_services' => serialize($message_services));
+            drupal_write_record('alma_user', $alma_user, 'alma_id');
+          }
         }
         else {
-          alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phone'], $value);
+          if (!empty($old_info['phones'][0]['id'])) {
+            alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
+            // Also remove SMS messaging service
+            alma_client()->remove_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+
+            // Update local user settings accordingly
+            unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
+            $alma_user = array('alma_id' => $account->uid, 'message_services' => serialize($account->message_services));
+            drupal_write_record('alma_user', $alma_user, 'alma_id');
+            
+          }
         }
       break;
     }
