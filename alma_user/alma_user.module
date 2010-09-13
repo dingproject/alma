@@ -355,20 +355,6 @@ function alma_user_ding_renew_loans($creds, $loan_ids) {
 }
 
 /**
- * Implements hook_ding_delete_reservations().
- */
-function alma_user_ding_delete_reservations($creds, $reservation) {
-	alma_client_remove_reservation($creds['user_id'], $creds['password'], $reservation);
-}
-
-/**
- * Implements hook_ding_create_reservation().
- */
-function alma_user_ding_create_reservation($creds, $reservation) {
-	alma_client_add_reservation($creds['user_id'], $creds['password'], $reservation);
-}
-
-/**
  * Implements hook_ding_user_has_reservation().
  */
 function alma_user_ding_user_has_reservation($creds, $item_id) {
