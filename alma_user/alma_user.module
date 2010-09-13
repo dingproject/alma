@@ -341,9 +341,9 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
 }
 
 /**
- * Implements hook_ding_update_reservation().
+ * Implements hook_ding_library_user_update_reservation().
  */
-function alma_user_ding_update_reservation($creds, $reservation, $changes) {
+function alma_user_ding_library_user_update_reservation($creds, $reservation, $changes) {
   alma_client_change_reservation($creds['user_id'], $creds['password'], $reservation, $changes);
 }
 
