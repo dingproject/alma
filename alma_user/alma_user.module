@@ -10,14 +10,14 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
       if ($account->library_user_id) {
         // Attach the Alma user id and name to the user object when it
         // is loaded, so it's available everywhere the user is.
-        $data = db_fetch_array(db_query("SELECT * FROM {alma_user} WHERE uid = %d LIMIT 1;", $account->library_user_id));
+        $data = db_fetch_array(db_query("SELECT * FROM {alma_user} WHERE alma_id = '%s' LIMIT 1;", $account->library_user_id));
         $account->preferred_branch = $data['preferred_branch'];
         $account->interest_period = $data['interest_period'];
         $account->message_services = ($data['message_services']) ? unserialize($data['message_services']) : NULL;
       }
       break;
     case 'delete':
-      db_query('DELETE FROM {alma_user} WHERE uid=%d', $account->library_user_id);
+      db_query('DELETE FROM {alma_user} WHERE alma_id="%s"', $account->library_user_id);
       // Tricky: No break, delete also performs the same actions as logout.
   }
 }
@@ -162,46 +162,47 @@ function alma_user_login_validate($form, &$form_state) {
 /**
  * User library settings form.
  */
-function alma_user_form_forms_library_settings_alter(&$form, &$form_state) {
-  $account = $form['account']['value'];
-
+function alma_user_form_ding_library_user_forms_library_settings_alter(&$form, &$form_state) {
+  $account = $form['account']['#value'];
+  
   $form['preferred_branch'] = array(
-    '#type' => 'select',
-    '#title' => t('Preferred library'),
-    '#options' => alma_client_get_reservation_branches(),
+    '#type'          => 'select',
+    '#title'         => t('Preferred library'),
+    '#options'       => alma_client()->get_reservation_branches(),
     '#default_value' => $account->preferred_branch,
   );
 
   $form['interest_period'] = array(
-    '#type' => 'select',
-    '#title' => t('Period of interest'),
+    '#type'        => 'select',
+    '#title'       => t('Period of interest'),
     '#description' => t('How long are you willing to wait for a reservation?'),
-    '#options' => array(
-      '30' => t('A month'),
-      '60' => t('Two months'),
-      '90' => t('Three months'),
-      '183' => t('Six months'),
-      '365' => t('A year'),
+    '#options'     => array(
+      '30'         => t('A month'),
+      '60'         => t('Two months'),
+      '90'         => t('Three months'),
+      '183'        => t('Six months'),
+      '365'        => t('A year'),
     ),
     '#default_value' => (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ALMA_USER_DEFAULT_INTEREST_PERIOD,
   );
 
   $form['suspend_start'] = array(
-    '#type' => 'date_popup',
-    '#title' => t('Suspend reservations from'),
-    '#date_format' => DATE_FORMAT_DATE,
+    '#type'          => 'date_popup',
+    '#title'         => t('Suspend reservations from'),
+    '#date_format'   => DATE_FORMAT_DATE,
     '#default_value' => (isset($account->user_info['absent_periods'][0])) ? $account->user_info['absent_periods'][0]['from_date'] : '',
   );
 
   $form['suspend_end'] = array(
-    '#type' => 'date_popup',
-    '#title' => t('To'),
-    '#date_format' => DATE_FORMAT_DATE,
+    '#type'          => 'date_popup',
+    '#title'         => t('To'),
+    '#date_format'   => DATE_FORMAT_DATE,
     '#default_value' => (isset($account->user_info['absent_periods'][0])) ? $account->user_info['absent_periods'][0]['to_date'] : '',
   );
   
   $form['#validate'][] = 'alma_user_forms_library_settings_validate';
-  $form['#submit'][] = 'alma_user_forms_library_settings_submit';
+  $form['#submit'][]   = 'alma_user_forms_library_settings_submit';
+  
 }
 
 /**
@@ -366,7 +367,7 @@ function alma_user_ding_user_has_reservation($creds, $item_id) {
  * Submit handler for user library settings.
  */
 function alma_user_forms_library_settings_submit($form, &$form_state) {
-  $creds = alma_user_get_credentials($form_state['values']['account']);
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
 
   $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
 
@@ -397,9 +398,8 @@ function alma_user_forms_library_settings_submit($form, &$form_state) {
     // And save the new choice to Alma.
     alma_client_change_patron_preferences($creds['user_id'], $creds['password'], $form_state['values']['preferred_branch']);
   }
-
   if ($form_state['values']['interest_period'] != $form_state['values']['account']->interest_period) {
-    db_query('UPDATE {alma_user} SET interest_period = %d WHERE uid = %d LIMIT 1;', $form_state['values']['interest_period'], $form_state['values']['account']->uid);
+    db_query('UPDATE {alma_user} SET interest_period = %d WHERE alma_id = "%s" LIMIT 1;', $form_state['values']['interest_period'], $form_state['values']['account']->library_user_id);
   }
 }
 
@@ -416,9 +416,8 @@ function alma_user_form_authenticate_validate($form, &$form_state) {
  */
 function alma_user_ding_library_user_create($account, $user_info) {
   $branch = (isset($user_info['preferences']['user_branch'])) ? $user_info['preferences']['user_branch'] : '';
-
   // Store Alma user data in our own table.
-  db_query("INSERT INTO {alma_user} (alma_id, preferred_branch) VALUES (%d, '%s');", $user->library_user_id, $branch);
+  db_query("INSERT INTO {alma_user} (alma_id, preferred_branch) VALUES ('%s', '%s');", $user_info['user_id'], $branch);
 }
 
 /**
