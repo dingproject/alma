@@ -358,7 +358,7 @@ function alma_user_ding_renew_loans($creds, $loan_ids) {
 /**
  * Implements hook_ding_user_has_reservation().
  */
-function alma_user_ding_user_has_reservation($creds, $item_id) {
+function alma_user_ding_library_user_has_reservation($creds, $item_id) {
 	$reservations = alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
   return $reservartions;
 }
