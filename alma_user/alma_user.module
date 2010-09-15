@@ -63,12 +63,12 @@ function alma_user_ding_library_user_delete_reservation($creds, $reservation) {
  */
 function alma_user_ding_library_user_create_reservation($creds, $res, $branch = false) {
   global $user;
-
+  
   $reservation = array(
     'id'            => utf8_decode($res['id']),
     'pickup_branch' => $branch,
     'valid_from'    => $res['valid_from'],
-    'valid_to'      => date('Y-m-d', strtotime('+' . ($user->interest_period  ? $user->interest_period : 0) . ' days')),
+    'valid_to'      => $res['valid_to'],
   );
   return alma_client_add_reservation($creds['user_id'], $creds['password'], $reservation);
 }
