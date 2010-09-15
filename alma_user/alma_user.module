@@ -61,16 +61,23 @@ function alma_user_ding_library_user_delete_reservation($creds, $reservation) {
 /**
  * Implements hook_ding_library_user_create_reservation().
  */
-function alma_user_ding_library_user_create_reservation($creds, $item_id, $optional = false) {
-  global $user;
+function alma_user_ding_library_user_create_reservation($user, $item_id, $optional = false) {
+  $reservation = false;
+  $creds       = ding_library_user_get_credentials($user, FALSE);
+  $has_creds   = is_array($creds);
   
-  $reservation = array(
-    'id'            => utf8_decode($item_id),
-    'pickup_branch' => $optional['pickup_branch'],
-    'valid_from'    => $optional['valid_from'],
-    'valid_to'      => $optional['valid_to'],
-  );
-  return alma_client_add_reservation($creds['user_id'], $creds['password'], $reservation);
+  if ($has_creds) {
+    $params = array(
+      'id'            => utf8_decode($item_id),
+      'pickup_branch' => $optional['pickup_branch'],
+      'valid_from'    => $optional['valid_from'],
+      'valid_to'      => $optional['valid_to'],
+    );
+   $reservation = alma_client_add_reservation($creds['user_id'], $creds['password'], $params);
+  }
+  
+  return $reservation;
+
 }
 
 /**
