@@ -85,18 +85,18 @@ function alma_ding_get_object_details($ids) {
 }
 
 /**
- * Implements hook_ting_availability_item().
+ * Implements hook_ding_get_object_details().
  */
-function alma_ting_availability_item($input) {
-	$availability = alma_client_get_availability($input);
+function alma_ting_availability_item($item_id) {
+	$availability = alma_client_get_availability($item_id);
 	return $availability;
 }
 
 /**
  * Implements hook_ting_availability_item_details().
  */
-function alma_ting_availability_item_details($input) {
-  $details = alma_client_catalogue_record_detail($input);
+function alma_ting_availability_item_details($item_id) {
+  $details = alma_client_catalogue_record_detail($item_id);
 
   // Use alma ids a local ids
   foreach ($details['records'] as &$record) {
