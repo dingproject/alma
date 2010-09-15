@@ -244,7 +244,8 @@ function alma_user_ding_library_user_get_info($creds, $extended = FALSE) {
 /**
  * Implements hook_ding_library_user_get_reservations().
  */
-function alma_user_ding_library_user_get_reservations($creds) {
+function alma_user_ding_library_user_get_reservations($user) {
+  $creds = ding_library_user_get_credentials($user); 
 	$reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
   return $reservations;
 }
@@ -365,7 +366,8 @@ function alma_user_ding_renew_loans($creds, $loan_ids) {
 /**
  * Implements hook_ding_user_has_reservation().
  */
-function alma_user_ding_library_user_has_reservation($creds, $item_id) {
+function alma_user_ding_library_user_has_reservation($user, $item_id) {
+  $creds = ding_library_user_get_credentials($user);
 	return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
 }
 
