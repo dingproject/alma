@@ -766,7 +766,9 @@ function alma_client_catalogue_record_detail($alma_ids) {
   if (empty($alma_ids)) {
     return array();
   }
-
+  if (is_array($alma_ids)) {
+    $alma_ids = join(',', $alma_ids);
+  }
   try {
     $data = alma_client()->catalogue_record_detail($alma_ids);
     if (empty($data)) { return array(); }
