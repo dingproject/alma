@@ -14,11 +14,6 @@ $plugin = array(
 );
 
 /**
- * @addtogroup hooks
- * @{
- */
-
-/**
  * Get information on a user.
  *
  * Returns an array of user data, which as a minimum should contain
@@ -55,7 +50,20 @@ function alma_user_user_update_info($account, $new_info) {
   return;
 }
 
-
 /**
- * @} End of "addtogroup hooks".
+ * Returns whether the account is currently 'logged in' to the user
+ * backend.
+ *
+ * If not, we'll need to authenticate before we can do anything.
+ *
+ * @param object $account
+ *   The user to check.
+ * @param boolean $redirect
+ *   Whether it's OK to redirect to log the user in.
+ *
+ * @return boolean
+ *   TRUE if the account is authenticated.
  */
+function alma_user_user_logged_in($account, $redirect = FALSE) {
+  return (bool) _alma_user_get_credentials($account, $redirect);
+}
