@@ -6,6 +6,12 @@
  */
 function alma_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
+    case 'login':
+      if ($account->alma_creds) {
+        $_SESSION['alma_creds'][$account->uid] = $account->alma_creds;
+        unset($account->alma_creds);
+      }
+      break;
     case 'load':
       if ($account->library_user_id) {
         // Attach the Alma user id and name to the user object when it
@@ -18,7 +24,12 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
       break;
     case 'delete':
       db_query('DELETE FROM {alma_user} WHERE alma_id="%s"', $account->library_user_id);
-      // Tricky: No break, delete also performs the same actions as logout.
+      break;
+      /*
+       * There's no 'logout' case here, as user_logout calls session_destroy,
+       * which deletes the session and its data. The session is already gone
+       * by the time hook_user('logout') is called.
+       */
   }
 }
 
@@ -34,6 +45,31 @@ function alma_user_init() {
   if ($user->uid > 1) {
     alma_user_user('load', $edit, $user);
   }
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Delete credentials after a while.
+ */
+function alma_user_cron() {
+  // TODO: Move variable from ding_library_user
+  $expire_time = $_SERVER['REQUEST_TIME'] - variable_get('ding_library_user_credential_cache_duration', 1800);
+  $res = db_query("SELECT sid, session, timestamp FROM {session} WHERE timestamp < %d", $expire_time);
+  // As the only PHP functions that reads and writes the
+  // almost-but-not-quite-serialized-data format of sessions does it to/from
+  // the current session, we're using our own session as a scratchpad.
+  $old_session = $_SESSION;
+  while ($row = db_fetch_object($res)) {
+    $_SESSION = array();
+    session_decode($ros->session);
+    if (isset($_SESSION['alma_creds'])) {
+      unset($_SESSION['alma_creds']);
+      $new_session = session_encode();
+      db_query("UPDATE {session} SET session = '%s' WHERE sid = %d AND timestamp = %d", $new_session, $row->sid, $row->timestamp);
+    }
+  }
+  $_SESSION = $old_session;
 }
 
 /**
@@ -55,7 +91,7 @@ function alma_user_theme($existing, $type, $theme, $path) {
  * Implements hook_ding_library_user_delete_reservation().
  */
 function alma_user_ding_library_user_delete_reservation($user, $reservation) {
-  $creds = ding_library_user_get_credentials($user);
+  $creds = _alma_user_get_credentials($user);
   alma_client()->remove_reservation($creds['user_id'], $creds['password'], $reservation);
 }
 
@@ -64,9 +100,9 @@ function alma_user_ding_library_user_delete_reservation($user, $reservation) {
  */
 function alma_user_ding_library_user_create_reservation($user, $item_id, $optional = false) {
   $reservation = false;
-  $creds       = ding_library_user_get_credentials($user, FALSE);
+  $creds       = _alma_user_get_credentials($user, FALSE);
   $has_creds   = is_array($creds);
-  
+
   if ($has_creds) {
     $params = array(
       'id'            => utf8_decode($item_id),
@@ -76,9 +112,17 @@ function alma_user_ding_library_user_create_reservation($user, $item_id, $option
     );
    $reservation = alma_client_add_reservation($creds['user_id'], $creds['password'], $params);
   }
-  
-  return $reservation;
 
+  return $reservation;
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function alma_user_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ding_provider') {
+    return "plugins/$plugin";
+  }
 }
 
 /**
@@ -93,10 +137,9 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
     case 'user_login_block':
       // Since the login name can be a user's CPR-number, that too is hidden.
       $form['name']['#type'] = 'password';
-
-      // Add our own validation handler.
-      array_unshift($form['#validate'], 'alma_user_login_validate');
-
+      // Add our own validation handler, before the default Drupal login
+      // validator.
+      array_splice($form['#validate'], array_search('user_login_authenticate_validate', $form['#validate']), 0, 'alma_user_login_validate');
       break;
     case 'user_profile_form':
       // When we have credentials available, make library patron
@@ -108,7 +151,7 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
           '#description' => t('Phone number where the library can contact you. Is not published on the web site.'),
           '#default_value' => $form['ding_library_user_info']['#value']['phones'][0]['phone'],
         );
-    		
+
         // Add our own validation and submit handling.
         array_unshift($form['#validate'], 'alma_user_profile_validate');
         $form['#submit'][] = 'alma_user_profile_submit';
@@ -120,7 +163,6 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
     	break;
   }
 }
-
 
 /**
  * Validation for settings form.
@@ -156,23 +198,52 @@ function alma_user_profile_validate($form, &$form_state) {
  * Validation for the login form.
  */
 function alma_user_login_validate($form, &$form_state) {
-  // Remove everything but numbers from the “name” field to try and
-  // validate it as a library/borrower card.
-  $card = preg_replace('/\D+/', '', $form_state['values']['name']);
-  
-  //CPR-numbers contain 10 digits
-  if (strlen($card) != 10) {
-  	return false;
+  // If it looks like a CPR number, try logging in.
+  if (preg_match('/^\d{10}$/', $form_state['values']['name'])) {
+    alma_user_authenticate($form_state['values']);
   }
 }
 
+/**
+ */
+function alma_user_authenticate(&$form_values) {
+  $info = alma_client_get_patron_info($form_values['name'], $form_values['pass'], TRUE);
+
+  if (!$info) {
+    // Not found.
+    return;
+  }
+
+  if (isset($info['blocks']) && !empty($info['blocks'])) {
+    $block_codes = alma_user_block_codes();
+    foreach ($user_info['blocks'] as $block) {
+      drupal_set_message(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
+    }
+  }
+
+  $auth_name = md5(drupal_get_private_key() . $form_values['name']) . '@alma';
+  user_external_login_register($auth_name, 'alma_user');
+
+  global $user;
+  // Save credentials for later use.
+  $user->alma_creds = array(
+    'user_id' => $form_values['name'],
+    'password' => $form_values['pass'],
+  );
+
+  // Set display_name
+  $user->display_name = $info['user_name'];
+
+  // Finalize login.
+  user_authenticate_finalize($form_values);
+}
 
 /**
  * User library settings form.
  */
 function alma_user_form_ding_library_user_forms_library_settings_alter(&$form, &$form_state) {
   $account = $form['account']['#value'];
-  
+
   $form['preferred_branch'] = array(
     '#type'          => 'select',
     '#title'         => t('Preferred library'),
@@ -207,10 +278,10 @@ function alma_user_form_ding_library_user_forms_library_settings_alter(&$form, &
     '#date_format'   => DATE_FORMAT_DATE,
     '#default_value' => (isset($account->user_info['absent_periods'][0])) ? $account->user_info['absent_periods'][0]['to_date'] : '',
   );
-  
+
   $form['#validate'][] = 'alma_user_forms_library_settings_validate';
   $form['#submit'][]   = 'alma_user_forms_library_settings_submit';
-  
+
 }
 
 /**
@@ -235,18 +306,10 @@ function alma_user_forms_library_settings_validate($form, &$form_state) {
 }
 
 /**
- * Implements hook_ding_library_user_get_info().
- */
-function alma_user_ding_library_user_get_info($creds, $extended = FALSE) {
-	$info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
-	return $info;
-}
-
-/**
  * Implements hook_ding_library_user_get_reservations().
  */
 function alma_user_ding_library_user_get_reservations($user, $redirect = false) {
-  $creds = ding_library_user_get_credentials($user, $redirect); 
+  $creds = _alma_user_get_credentials($user, $redirect);
 	$reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
   return $reservations;
 }
@@ -255,7 +318,7 @@ function alma_user_ding_library_user_get_reservations($user, $redirect = false) 
  * Implements hook_ding_library_user_get_loans().
  */
 function alma_user_ding_library_user_get_loans($user, $redirect = false) {
-  $creds = ding_library_user_get_credentials($user, $redirect); 
+  $creds = _alma_user_get_credentials($user, $redirect);
 	$loans = alma_client_get_loans($creds['user_id'], $creds['password']);
 	return $loans;
 }
@@ -264,7 +327,7 @@ function alma_user_ding_library_user_get_loans($user, $redirect = false) {
  * Implements hook_ding_library_user_get_debts().
  */
 function alma_user_ding_library_user_get_debts($user) {
-  $creds = ding_library_user_get_credentials($user); 
+  $creds = _alma_user_get_credentials($user);
 	$debts = alma_client_get_debts($creds['user_id'], $creds['password']);
 	return $debts;
 }
@@ -272,8 +335,8 @@ function alma_user_ding_library_user_get_debts($user) {
 /**
  * Implements hook_ding_library_user_update_info().
  *
- * @param Array $creds 
- * @param Array $new_info 
+ * @param Array $creds
+ * @param Array $new_info
  * $new_info = array(
  *   'absent' => array(
  *    'id' => '',
@@ -285,17 +348,17 @@ function alma_user_ding_library_user_get_debts($user) {
  *  'password' => '',
  *  'phone' => '',
  *  );
- * @param Array $old_info 
+ * @param Array $old_info
  * @return void
  */
 
 function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = FALSE) {
   foreach ($new_info as $field_name => $value) {
-      
+
     if ($old_info && array_key_exists($field_name, $old_info) && $old_info[$field_name] == $value) {
       continue;
     }
-    
+
     switch ($field_name) {
       case 'absent':
         alma_client()->change_absent_period($creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
@@ -323,11 +386,11 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
             alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
           }
           // If user does not already have a SMS message service then add one
-          if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) || 
+          if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||
               !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
-            // Add a due date alerts as SMS service per default 
+            // Add a due date alerts as SMS service per default
             alma_client()->add_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
-  
+
             // Update local user settings accordingly
             $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
             $alma_user = array('alma_id' => $account->uid, 'message_services' => serialize($message_services));
@@ -344,7 +407,7 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
             unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
             $alma_user = array('alma_id' => $account->uid, 'message_services' => serialize($account->message_services));
             drupal_write_record('alma_user', $alma_user, 'alma_id');
-            
+
           }
         }
       break;
@@ -356,7 +419,7 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
  * Implements hook_ding_library_user_update_reservation().
  */
 function alma_user_ding_library_user_update_reservation($user, $reservation, $changes) {
-  $creds = ding_library_user_get_credentials($user);
+  $creds = _alma_user_get_credentials($user);
   alma_client_change_reservation($creds['user_id'], $creds['password'], $reservation, $changes);
 }
 
@@ -371,7 +434,7 @@ function alma_user_ding_renew_loans($creds, $loan_ids) {
  * Implements hook_ding_user_has_reservation().
  */
 function alma_user_ding_library_user_has_reservation($user, $item_id) {
-  $creds = ding_library_user_get_credentials($user);
+  $creds = _alma_user_get_credentials($user);
 	return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
 }
 
@@ -379,7 +442,7 @@ function alma_user_ding_library_user_has_reservation($user, $item_id) {
  * Submit handler for user library settings.
  */
 function alma_user_forms_library_settings_submit($form, &$form_state) {
-  $creds = ding_library_user_get_credentials($form_state['values']['account']);
+  $creds = _alma_user_get_credentials($form_state['values']['account']);
 
   $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
 
@@ -433,11 +496,9 @@ function alma_user_ding_library_user_create($account, $user_info) {
 }
 
 /**
- * Implementation of hook_ding_library_user_block_codes().
- * 
  * Get list of Alma block codes with their descriptions.
  */
-function alma_user_ding_library_user_block_codes() {
+function alma_user_block_codes() {
   return array(
     'a' => 'Forkert adresse',
     'c' => 'CPR-nr. fejl jf. folkeregister',
@@ -452,3 +513,16 @@ function alma_user_ding_library_user_block_codes() {
   );
 }
 
+/**
+ * Get alma credentials for user.
+ */
+function _alma_user_get_credentials($account, $redirect = FALSE) {
+  // See if we have credentials for the given user in the session.
+  if ($_SESSION['alma_creds'][$account->uid]) {
+    return $_SESSION['alma_creds'][$account->uid];
+  }
+  elseif ($redirect) {
+    drupal_goto('user/' . $account->uid . '/authenticate', drupal_get_destination());
+  }
+  return FALSE;
+}
