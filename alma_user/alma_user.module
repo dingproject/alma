@@ -88,35 +88,6 @@ function alma_user_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Implements hook_ding_library_user_delete_reservation().
- */
-function alma_user_ding_library_user_delete_reservation($user, $reservation) {
-  $creds = _alma_user_get_credentials($user);
-  alma_client()->remove_reservation($creds['user_id'], $creds['password'], $reservation);
-}
-
-/**
- * Implements hook_ding_library_user_create_reservation().
- */
-function alma_user_ding_library_user_create_reservation($user, $item_id, $optional = false) {
-  $reservation = false;
-  $creds       = _alma_user_get_credentials($user, FALSE);
-  $has_creds   = is_array($creds);
-
-  if ($has_creds) {
-    $params = array(
-      'id'            => utf8_decode($item_id),
-      'pickup_branch' => $optional['pickup_branch'],
-      'valid_from'    => $optional['valid_from'],
-      'valid_to'      => $optional['valid_to'],
-    );
-   $reservation = alma_client_add_reservation($creds['user_id'], $creds['password'], $params);
-  }
-
-  return $reservation;
-}
-
-/**
  * Implementation of hook_ctools_plugin_directory().
  */
 function alma_user_ctools_plugin_directory($module, $plugin) {
@@ -306,24 +277,6 @@ function alma_user_forms_library_settings_validate($form, &$form_state) {
 }
 
 /**
- * Implements hook_ding_library_user_get_reservations().
- */
-function alma_user_ding_library_user_get_reservations($user, $redirect = false) {
-  $creds = _alma_user_get_credentials($user, $redirect);
-	$reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
-  return $reservations;
-}
-
-/**
- * Implements hook_ding_library_user_get_loans().
- */
-function alma_user_ding_library_user_get_loans($user, $redirect = false) {
-  $creds = _alma_user_get_credentials($user, $redirect);
-	$loans = alma_client_get_loans($creds['user_id'], $creds['password']);
-	return $loans;
-}
-
-/**
  * Implements hook_ding_library_user_get_debts().
  */
 function alma_user_ding_library_user_get_debts($user) {
@@ -416,26 +369,10 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
 }
 
 /**
- * Implements hook_ding_library_user_update_reservation().
- */
-function alma_user_ding_library_user_update_reservation($user, $reservation, $changes) {
-  $creds = _alma_user_get_credentials($user);
-  alma_client_change_reservation($creds['user_id'], $creds['password'], $reservation, $changes);
-}
-
-/**
  * Implements hook_ding_renew_loans().
  */
 function alma_user_ding_renew_loans($creds, $loan_ids) {
 	alma_client_renew_loan($creds['user_id'], $creds['password'], $loan_ids);
-}
-
-/**
- * Implements hook_ding_user_has_reservation().
- */
-function alma_user_ding_library_user_has_reservation($user, $item_id) {
-  $creds = _alma_user_get_credentials($user);
-	return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
 }
 
 /**
