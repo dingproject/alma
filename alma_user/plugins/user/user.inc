@@ -29,7 +29,10 @@ $plugin = array(
  *   An array of user information.
  */
 function alma_user_user_get_info($account, $extended = FALSE) {
-  // Get creds..
+  $creds = _alma_user_get_credentials($account);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    return $creds;
+  }
   return alma_client_get_patron_info($creds['user_id'], $creds['password'], $extended);
 }
 
@@ -65,5 +68,6 @@ function alma_user_user_update_info($account, $new_info) {
  *   TRUE if the account is authenticated.
  */
 function alma_user_user_logged_in($account, $redirect = FALSE) {
-  return (bool) _alma_user_get_credentials($account, $redirect);
+  $creds = _alma_user_get_credentials($account);
+  return $creds != DING_PROVIDER_AUTH_REQUIRED;
 }

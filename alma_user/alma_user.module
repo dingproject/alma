@@ -453,13 +453,10 @@ function alma_user_block_codes() {
 /**
  * Get alma credentials for user.
  */
-function _alma_user_get_credentials($account, $redirect = FALSE) {
+function _alma_user_get_credentials($account) {
   // See if we have credentials for the given user in the session.
   if ($_SESSION['alma_creds'][$account->uid]) {
     return $_SESSION['alma_creds'][$account->uid];
   }
-  elseif ($redirect) {
-    drupal_goto('user/' . $account->uid . '/authenticate', drupal_get_destination());
-  }
-  return FALSE;
+  return DING_PROVIDER_AUTH_REQUIRED;
 }
