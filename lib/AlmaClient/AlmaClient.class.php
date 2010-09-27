@@ -24,7 +24,7 @@ class AlmaClient {
    * all requests for the page load.
    */
   private static $salt;
-  
+
   /**
    * Constructor, checking if we have a sensible value for $base_url.
    */
@@ -36,7 +36,7 @@ class AlmaClient {
       // TODO: Use a specialised exception for this.
       throw new Exception('Invalid base URL: ' . $base_url);
     }
-    
+
     self::$salt = rand();
   }
 
@@ -53,26 +53,26 @@ class AlmaClient {
    * @return DOMDocument
    *    A DOMDocument object with the response.
    */
-  public function request($method, $params = array(), $check_status = TRUE) {     	
+  public function request($method, $params = array(), $check_status = TRUE) {
     $startTime = explode(' ', microtime());
-    
+
     // For use with a non-Drupal-system, we should have a way to swap
     // the HTTP client out.
     $request = drupal_http_request(url($this->base_url . $method, array('query' => $params)));
-    
+
     $stopTime = explode(' ', microtime());
-    
+
     // For use with a non-Drupal-system, we should have a way to swap
     // logging and logging preferences out.
     if (variable_get('alma_enable_logging', FALSE)) {
     	$seconds = floatval(($stopTime[1]+$stopTime[0]) - ($startTime[1]+$startTime[0]));
-    	
+
       $log_params = self::filter_request_params($params);
 
-      // Log the request          
-      watchdog('alma', 'Sent request: @url (@seconds s)', array('@url' => url($this->base_url . $method, array('query' => $log_params)), '@seconds' => $seconds), WATCHDOG_DEBUG);      
+      // Log the request
+      watchdog('alma', 'Sent request: @url (@seconds s)', array('@url' => url($this->base_url . $method, array('query' => $log_params)), '@seconds' => $seconds), WATCHDOG_DEBUG);
     }
-    
+
     if ($request->code == 200) {
       // Since we currently have no neat for the more advanced stuff
       // SimpleXML provides, we'll just use DOM, since that is a lot
@@ -98,19 +98,19 @@ class AlmaClient {
       throw new AlmaClientHTTPError('Request error: ' . $request->code . $request->error);
     }
   }
-  
+
   /**
    * Filters sensitive information in request parameters allowing the values to be logged
-   * 
+   *
    * @param array $params An array of request information
-   * 
+   *
    * @return array
    *    An array of filtered request information
    */
   private static function filter_request_params($params) {
       // Scramble sensitive information
       $sensitive = array('borrCard', 'pinCode','pinCodeChange', 'address', 'emailAddress');
-      
+
       $log_params = array();
       foreach ($params as $key => $value) {
         if (in_array($key, $sensitive)) {
@@ -121,7 +121,7 @@ class AlmaClient {
         }
         $log_params[$key] = $value;
       }
-      
+
       return $log_params;
   }
 
@@ -851,7 +851,7 @@ class AlmaClient {
     $doc = $this->request('patron/absentPeriod/remove', $params);
     return TRUE;
   }
-  
+
   /**
    * Add a messaging service.
    *
@@ -900,8 +900,8 @@ class AlmaClient {
 
     $doc = $this->request('patron/messageServices/remove', $params);
     return TRUE;
-  }  
-  
+  }
+
 }
 
 /**
