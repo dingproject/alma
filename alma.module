@@ -59,7 +59,7 @@ function alma_requirements($phase) {
  * Implements hook_ding_get_branches()
  */
 function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
-  return alma_client_get_branches($optional, $reset);	
+  return alma_client_get_branches($optional, $reset);
 }
 
 /**
@@ -100,9 +100,9 @@ function alma_ting_availability_item_details($item_id) {
 
   // Use alma ids a local ids
   foreach ($details['records'] as &$record) {
-    $record['local_id'] = $record['alma_id'];	
-  } 
-  
+    $record['local_id'] = $record['alma_id'];
+  }
+
   return $details;
 }
 
@@ -992,25 +992,3 @@ function alma_calculate_wait_time($records) {
 
   return $wait;
 }
-
-/**
- * Format a date from Alma.
- *
- * @param string $datestring
- *    Date in ISO 8601 format (eg. 2010-04-10).
- * @param string $date_format
- *    The format (in date() style) to use when formatting the date.
- * @return string
- *    Formatted date or original $datestring on failure.
- */
-function alma_format_date($datestring, $date_format) {
-  if ($datestring) {
-    $timestamp = strtotime($datestring);
-
-    if ($timestamp > 1) {
-      return format_date($timestamp, 'custom', $date_format);
-    }
-  }
-  return $datestring;
-}
-

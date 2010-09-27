@@ -24,7 +24,7 @@ class AlmaClient {
    * all requests for the page load.
    */
   private static $salt;
-  
+
   /**
    * Constructor, checking if we have a sensible value for $base_url.
    */
@@ -36,7 +36,7 @@ class AlmaClient {
       // TODO: Use a specialised exception for this.
       throw new Exception('Invalid base URL: ' . $base_url);
     }
-    
+
     self::$salt = rand();
   }
 
@@ -58,10 +58,10 @@ class AlmaClient {
     // logging and logging preferences out.
   	if (variable_get('alma_enable_logging', FALSE)) {
   		$log_params = self::filter_request_params($params);
-      // Log the request  		 		
-      watchdog('alma', 'Sending request: '. url($this->base_url . $method, array('query' => $log_params)), NULL, WATCHDOG_DEBUG);  		
+      // Log the request
+      watchdog('alma', 'Sending request: '. url($this->base_url . $method, array('query' => $log_params)), NULL, WATCHDOG_DEBUG);
   	}
-  	
+
     // For use with a non-Drupal-system, we should have a way to swap
     // the HTTP client out.
     $request = drupal_http_request(url($this->base_url . $method, array('query' => $params)));
@@ -91,19 +91,19 @@ class AlmaClient {
       throw new AlmaClientHTTPError('Request error: ' . $request->code . $request->error);
     }
   }
-  
+
   /**
    * Filters sensitive information in request parameters allowing the values to be logged
-   * 
+   *
    * @param array $params An array of request information
-   * 
+   *
    * @return array
    *    An array of filtered request information
    */
   private static function filter_request_params($params) {
       // Scramble sensitive information
       $sensitive = array('borrCard', 'pinCode','pinCodeChange', 'address', 'emailAddress');
-      
+
       $log_params = array();
       foreach ($params as $key => $value) {
         if (in_array($key, $sensitive)) {
@@ -114,7 +114,7 @@ class AlmaClient {
         }
         $log_params[$key] = $value;
       }
-      
+
       return $log_params;
   }
 
@@ -844,7 +844,7 @@ class AlmaClient {
     $doc = $this->request('patron/absentPeriod/remove', $params);
     return TRUE;
   }
-  
+
   /**
    * Add a messaging service.
    *
@@ -893,8 +893,8 @@ class AlmaClient {
 
     $doc = $this->request('patron/messageServices/remove', $params);
     return TRUE;
-  }  
-  
+  }
+
 }
 
 /**
