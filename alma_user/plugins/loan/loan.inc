@@ -20,7 +20,13 @@ function alma_user_loan_get_loans($account, $redirect = FALSE) {
     return $creds;
   }
 
-  $loans = alma_client_get_loans($creds['user_id'], $creds['password']);
+  try {
+    $loans =  alma_client()->get_loans($creds['user_id'], $creds['password']);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
+    return FALSE;
+  }
+
   return $loans;
 }
 
@@ -49,6 +55,18 @@ function alma_user_loan_details($loan) {
  */
 function alma_user_loan_renew_loans($account, $loan_ids) {
   $creds = _alma_user_get_credentials($user, $redirect);
-  return (bool) alma_client_renew_loan($creds['user_id'], $creds['password']);
-
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    return $creds;
+  }
+  try {
+    $res = alma_client()->renew_loan($creds['user_id'], $creds['password'], $loan_ids);
+    if ($res) {
+      // Seemed to work...
+      return array();
+    }
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  return t("Error renewing: internal error");
 }
