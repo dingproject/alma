@@ -66,30 +66,30 @@ function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
  * Implements hook_ding_get_reservation_branches().
  */
 function alma_ding_library_get_reservation_branches($optional = TRUE, $reset = FALSE) {
-	return alma_client_get_reservation_branches($optional, $reset);
+  return alma_client_get_reservation_branches($optional, $reset);
 }
 
 /**
  * Implements hook_ding_library_get_organisation().
  */
 function alma_ding_library_get_organisation() {
-	return alma_get_organisation();
+  return alma_get_organisation();
 }
 
 /**
  * Implements hook_ding_get_object_details().
  */
 function alma_ding_get_object_details($ids) {
-	$records = alma_client_catalogue_record_detail($ids);
-	return $records;
+  $records = alma_client_catalogue_record_detail($ids);
+  return $records;
 }
 
 /**
  * Implements hook_ding_get_object_details().
  */
 function alma_ting_availability_item($item_id) {
-	$availability = alma_client_get_availability($item_id);
-	return $availability;
+  $availability = alma_client_get_availability($item_id);
+  return $availability;
 }
 
 /**
@@ -436,26 +436,6 @@ function alma_client_get_reservations($borr_card, $pin_code) {
 }
 
 /**
- * Get a patron's loans
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's four digit PIN code.
- * @return array
- *    The loans as an array.
- */
-function alma_client_get_loans($borr_card, $pin_code) {
-  try {
-    return alma_client()->get_loans($borr_card, $pin_code);
-  } catch (Exception $e) {
-    watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
  * Get a patron's debts
  *
  * @param string $borr_card
@@ -546,27 +526,6 @@ function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
   }
   catch (Exception $e) {
     watchdog('alma_user', 'remove_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
- * Renew a loan
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's four digit PIN code.
- * @param array $loan_ids
- *    IDs for the loans we want renewed.
- */
-function alma_client_renew_loan($borr_card, $pin_code, $loan_ids) {
-  try {
-    return alma_client()->renew_loan($borr_card, $pin_code, $loan_ids);
-  }
-  catch (Exception $e) {
-    watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
 }
