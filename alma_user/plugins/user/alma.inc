@@ -14,46 +14,6 @@ $plugin = array(
 );
 
 /**
- * Get information on a user.
- *
- * Returns an array of user data, which as a minimum should contain
- * the keys 'user_id' and 'user_name', which is used to bind to a
- * Drupal user.
- *
- * @param object $account
- *   User object.
- * @param boolean $extended
- *   Optional, whether to return extended information.
- *
- * @return array
- *   An array of user information.
- */
-function alma_user_user_get_info($account, $extended = FALSE) {
-  $creds = _alma_user_get_credentials($account);
-  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
-    return $creds;
-  }
-  return alma_client_get_patron_info($creds['user_id'], $creds['password'], $extended);
-}
-
-/**
- * Update user information.
- *
- * Update the user information with the given values. Only set keys
- * should be considered, with NULL values signalling deletion.
- *
- * @param object $account
- *   Object of user to be updated.
- * @param array $new_info
- *   New user information.
- *
- * @return void
- */
-function alma_user_user_update_info($account, $new_info) {
-  return;
-}
-
-/**
  * Returns whether the account is currently 'logged in' to the user
  * backend.
  *
@@ -68,6 +28,48 @@ function alma_user_user_update_info($account, $new_info) {
 function alma_user_user_logged_in($account) {
   $creds = _alma_user_get_credentials($account);
   return $creds != DING_PROVIDER_AUTH_REQUIRED;
+}
+
+/**
+ * Form callback for plugin settings.
+ *
+ * This is a regular form callback.
+ */
+function alma_user_user_settings_form() {
+  $form['alma_base_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alma base URL'),
+    '#description' => t('The base URL for constructing request to the Alma REST service, usually something like https://server.example.com:8000/alma/ or http://10.0.0.34:8010/alma/'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('alma_base_url', ''),
+  );
+
+  $form['alma_enable_logging'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable logging'),
+    '#default_value' => variable_get('alma_enable_logging', ''),
+    '#description' => t('Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests'),
+  );
+
+  $form['alma_user_credential_cache_duration'] = array(
+    '#type' => 'select',
+    '#title' => t('Credential cache duration'),
+    '#description' => t('Determines how long the user’s library system credentials will be cached for. For the duration of the cache, the user will be able to access his personal information and interact with the library system without having to provide his credentials again.'),
+    '#options' => array(
+      300 => t('5 minutes'),
+      900 => t('15 minutes'),
+      1800 => t('30 minutes'),
+      3600 => t('1 hour'),
+      10800 => t('3 hours'),
+      43200 => t('12 hours'),
+      86400 => t('1 day'),
+      259200 => t('3 days'),
+      604800 => t('7 days'),
+    ),
+    '#default_value' => variable_get('alma_user_credential_cache_duration', 1800),
+  );
+
+  return system_settings_form($form);
 }
 
 /**

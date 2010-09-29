@@ -7,29 +7,6 @@
  */
 
 /**
- * Implementation of hook_menu().
- */
-function alma_menu() {
-  $items = array();
-
-  $items['admin/settings/alma'] = array(
-    'title' => 'Axiell Alma',
-    'description' => 'Settings for the Alma module',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('alma_admin_settings_form'),
-    'access arguments' => array('administer site configuration'),
-    'file' => 'alma.admin.inc',
-  );
-
-  $items['admin/settings/alma/main'] = array(
-    'title' => 'Alma',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-
-  return $items;
-}
-
-/**
  * Implementation of hook_flush_caches().
  */
 function alma_flush_caches() {
