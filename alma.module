@@ -94,7 +94,9 @@ function alma_client() {
   static $client;
   if (!isset($client)) {
     $path = drupal_get_path('module', 'alma');
-    include($path . '/lib/AlmaClient/AlmaClient.class.php');
+    // How the hell it can be possible that we include this twice, I
+    // don't know, but I've seen it happen on the user page.
+    require_once($path . '/lib/AlmaClient/AlmaClient.class.php');
     $client = new AlmaClient(variable_get('alma_base_url', ''));
   }
   return $client;
