@@ -155,7 +155,6 @@ class AlmaClient {
   public function get_reservation_branches() {
     $branches = array();
     $doc = $this->request('reservation/branches');
-
     foreach ($doc->getElementsByTagName('branch') as $branch) {
       $branches[$branch->getAttribute('id')] = $branch->getElementsByTagName('name')->item(0)->nodeValue;
     }
@@ -325,7 +324,7 @@ class AlmaClient {
         'create_date' => $item->getAttribute('createDate'),
         'valid_from' => $item->getAttribute('validFromDate'),
         'valid_to' => $item->getAttribute('validToDate'),
-        'queue_no' => $item->getAttribute('queueNo'),
+        'queue_number' => $item->getAttribute('queueNo'),
         'organisation_id' => $item->getAttribute('organisationId'),
         'record_id' => $item->getElementsByTagName('catalogueRecord')->item(0)->getAttribute('id'),
         'record_available' => $item->getElementsByTagName('catalogueRecord')->item(0)->getAttribute('isAvailable'),
@@ -336,9 +335,9 @@ class AlmaClient {
         $reservation['pickup_expire_date'] = $item->getAttribute('pickUpExpireDate');
       }
 
-      $reservations[] = $reservation;
+      $reservations[$reservation['id']] = $reservation;
     }
-    usort($reservations, 'AlmaClient::reservation_sort');
+    uasort($reservations, 'AlmaClient::reservation_sort');
     return $reservations;
   }
 
