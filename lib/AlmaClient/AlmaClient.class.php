@@ -53,19 +53,26 @@ class AlmaClient {
    * @return DOMDocument
    *    A DOMDocument object with the response.
    */
-  public function request($method, $params = array(), $check_status = TRUE) {
-    // For use with a non-Drupal-system, we should have a way to swap
-    // logging and logging preferences out.
-  	if (variable_get('alma_enable_logging', FALSE)) {
-  		$log_params = self::filter_request_params($params);
-      // Log the request  		 		
-      watchdog('alma', 'Sending request: '. url($this->base_url . $method, array('query' => $log_params)), NULL, WATCHDOG_DEBUG);  		
-  	}
-  	
+  public function request($method, $params = array(), $check_status = TRUE) {     	
+    $startTime = explode(' ', microtime());
+    
     // For use with a non-Drupal-system, we should have a way to swap
     // the HTTP client out.
     $request = drupal_http_request(url($this->base_url . $method, array('query' => $params)));
+    
+    $stopTime = explode(' ', microtime());
+    
+    // For use with a non-Drupal-system, we should have a way to swap
+    // logging and logging preferences out.
+    if (variable_get('alma_enable_logging', FALSE)) {
+    	$seconds = floatval(($stopTime[1]+$stopTime[0]) - ($startTime[1]+$startTime[0]));
+    	
+      $log_params = self::filter_request_params($params);
 
+      // Log the request          
+      watchdog('alma', 'Sent request: @url (@seconds s)', array('@url' => url($this->base_url . $method, array('query' => $log_params)), '@seconds' => $seconds), WATCHDOG_DEBUG);      
+    }
+    
     if ($request->code == 200) {
       // Since we currently have no neat for the more advanced stuff
       // SimpleXML provides, we'll just use DOM, since that is a lot
