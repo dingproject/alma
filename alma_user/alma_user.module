@@ -482,7 +482,7 @@ function alma_user_form_ding_cart_list_form_alter(&$form, &$form_state) {
 /**
  * Custom submit handler
  */
-function ding_reservation_form_ding_cart_list_form_submit($form, &$form_state) {
+function alma_user_form_ding_cart_list_form_submit($form, &$form_state) {
   foreach ($form_state['values']['selected'] as $local_id) {
     $reservation = ding_provider_invoke('reservation', 'create', $form_state['values']['account'], $local_id, array('valid_to' => $form_state['values']['expiry'], 'pickup_branch' => $form_state['values']['pickup_branch']));
 
