@@ -15,7 +15,7 @@ $plugin = array(
 // ding_library_user_create_reservation($user, $item_id, $optional = FALSE)
 function alma_user_reservation_create($user, $item_id) {
   $reservation = FALSE;
-  $creds       = _alma_user_get_credentials($user);
+  $creds       = ding_library_user_get_credentials($user);
   $has_creds   = is_array($creds);
 
   $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
@@ -47,7 +47,7 @@ function alma_user_reservation_create($user, $item_id) {
 
 // ding_library_user_get_reservations($user)
 function alma_user_reservation_list($user) {
-  $creds = _alma_user_get_credentials($user, $redirect);
+  $creds = ding_library_user_get_credentials($user, $redirect);
   $reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
   return $reservations;
 }
@@ -69,6 +69,6 @@ function alma_user_reservation_details($reservation) {
  */
 // ding_library_user_has_reservation($user, $item_id)
 function alma_user_reservation_exists($user, $item_id) {
-  $creds = _alma_user_get_credentials($user);
+  $creds = ding_library_user_get_credentials($user);
   return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
 }
