@@ -2,76 +2,6 @@
 // $Id$
 
 /**
- * Implementation of hook_user().
- */
-function alma_user_user($op, &$edit, &$account, $category = NULL) {
-  switch ($op) {
-    case 'login':
-      if ($account->alma_creds) {
-        $_SESSION['alma_creds'][$account->uid] = $account->alma_creds;
-        unset($account->alma_creds);
-      }
-      break;
-    case 'load':
-      if ($account->library_user_id) {
-        // Attach the Alma user id and name to the user object when it
-        // is loaded, so it's available everywhere the user is.
-        $data = db_fetch_array(db_query("SELECT * FROM {alma_user} WHERE alma_id = '%s' LIMIT 1;", $account->library_user_id));
-        $account->preferred_branch = $data['preferred_branch'];
-        $account->interest_period = $data['interest_period'];
-        $account->message_services = ($data['message_services']) ? unserialize($data['message_services']) : NULL;
-      }
-      break;
-    case 'delete':
-      db_query('DELETE FROM {alma_user} WHERE alma_id="%s"', $account->library_user_id);
-      break;
-      /*
-       * There's no 'logout' case here, as user_logout calls session_destroy,
-       * which deletes the session and its data. The session is already gone
-       * by the time hook_user('logout') is called.
-       */
-  }
-}
-
-/**
- * Implementation of hook_init().
- */
-function alma_user_init() {
-  global $user;
-  $edit = array();
-
-  // Fire our own hook_user to have the Alma data available on the
-  // global $user object.
-  if ($user->uid > 1) {
-    alma_user_user('load', $edit, $user);
-  }
-}
-
-/**
- * Implementation of hook_cron().
- *
- * Delete credentials after a while.
- */
-function alma_user_cron() {
-  $expire_time = $_SERVER['REQUEST_TIME'] - variable_get('alma_user_credential_cache_duration', 1800);
-  $res = db_query("SELECT sid, session, timestamp FROM {session} WHERE timestamp < %d", $expire_time);
-  // As the only PHP functions that reads and writes the
-  // almost-but-not-quite-serialized-data format of sessions does it to/from
-  // the current session, we're using our own session as a scratchpad.
-  $old_session = $_SESSION;
-  while ($row = db_fetch_object($res)) {
-    $_SESSION = array();
-    session_decode($ros->session);
-    if (isset($_SESSION['alma_creds'])) {
-      unset($_SESSION['alma_creds']);
-      $new_session = session_encode();
-      db_query("UPDATE {session} SET session = '%s' WHERE sid = %d AND timestamp = %d", $new_session, $row->sid, $row->timestamp);
-    }
-  }
-  $_SESSION = $old_session;
-}
-
-/**
  * Implementation of hook_theme().
  */
 function alma_user_theme($existing, $type, $theme, $path) {
@@ -105,12 +35,11 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
     case 'user_login_block':
+    case 'ding_library_user_forms_authenticate':
       // Since the login name can be a user's CPR-number, that too is hidden.
       $form['name']['#type'] = 'password';
-      // Add our own validation handler, before the default Drupal login
-      // validator.
-      array_splice($form['#validate'], array_search('user_login_authenticate_validate', $form['#validate']), 0, 'alma_user_login_validate');
-      break;
+    break;
+
     case 'user_profile_form':
       // When we have credentials available, make library patron
       // information available for altering.
@@ -128,9 +57,6 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
 
       }
       break;
-    case 'ding_library_user_forms_authenticate':
-    	$form['#validate'][] = 'ding_library_user_forms_authenticate_validate';
-    	break;
   }
 }
 
@@ -165,54 +91,10 @@ function alma_user_profile_validate($form, &$form_state) {
 }
 
 /**
- * Validation for the login form.
- */
-function alma_user_login_validate($form, &$form_state) {
-  // If it looks like a CPR number, try logging in.
-  if (preg_match('/^\d{10}$/', $form_state['values']['name'])) {
-    alma_user_authenticate($form_state['values']);
-  }
-}
-
-/**
- */
-function alma_user_authenticate(&$form_values) {
-  $info = alma_client_get_patron_info($form_values['name'], $form_values['pass'], TRUE);
-
-  if (!$info) {
-    // Not found.
-    return;
-  }
-
-  if (isset($info['blocks']) && !empty($info['blocks'])) {
-    $block_codes = alma_user_block_codes();
-    foreach ($user_info['blocks'] as $block) {
-      drupal_set_message(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
-    }
-  }
-
-  $auth_name = md5(drupal_get_private_key() . $form_values['name']) . '@alma';
-  user_external_login_register($auth_name, 'alma_user');
-
-  global $user;
-  // Save credentials for later use.
-  $user->alma_creds = array(
-    'user_id' => $form_values['name'],
-    'password' => $form_values['pass'],
-  );
-
-  // Set display_name
-  $user->display_name = $info['user_name'];
-
-  // Finalize login.
-  user_authenticate_finalize($form_values);
-}
-
-/**
  * Implements hook_ding_library_user_get_debts().
  */
 function alma_user_ding_library_user_get_debts($user) {
-  $creds = _alma_user_get_credentials($user);
+  $creds = ding_library_user_get_credentials($user);
   $debts = alma_client_get_debts($creds['user_id'], $creds['password']);
   return $debts;
 }
@@ -301,23 +183,6 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
 }
 
 /**
- * Validation for authentication form.
- */
-function alma_user_form_authenticate_validate($form, &$form_state) {
-  // Remove everything but numbers from the user_id field value.
-  $form_state['values']['user_id'] = preg_replace('/\D+/', '', $form_state['values']['user_id']);
-}
-
-/**
- * Implementation of hook_ding_library_user_create().
- */
-function alma_user_ding_library_user_create($account, $user_info) {
-  $branch = (isset($user_info['preferences']['user_branch'])) ? $user_info['preferences']['user_branch'] : '';
-  // Store Alma user data in our own table.
-  db_query("INSERT INTO {alma_user} (alma_id, preferred_branch) VALUES ('%s', '%s');", $user_info['user_id'], $branch);
-}
-
-/**
  * Get list of Alma block codes with their descriptions.
  */
 function alma_user_block_codes() {
@@ -333,17 +198,6 @@ function alma_user_block_codes() {
     'v' => 'Lånerkort/sygesik. væk',
     'x' => 'Forsvundet jf. folkeregistret',
   );
-}
-
-/**
- * Get alma credentials for user.
- */
-function _alma_user_get_credentials($account) {
-  // See if we have credentials for the given user in the session.
-  if ($_SESSION['alma_creds'][$account->uid]) {
-    return $_SESSION['alma_creds'][$account->uid];
-  }
-  return DING_PROVIDER_AUTH_REQUIRED;
 }
 
 // Reservation related functions.
@@ -414,7 +268,7 @@ function alma_user_ding_reservation_list_form_validate($form, $form_state) {
  * Updates selected reservations.
  */
 function alma_user_ding_reservation_list_form_update($form, $form_state) {
-  $creds = _alma_user_get_credentials($form_state['values']['account']);
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
   $reservations_ids = array_filter($form_state['values']['selected']);
   $changes = array();
   if ($form_state['values']['new_expiry']) {
@@ -437,7 +291,7 @@ function alma_user_ding_reservation_list_form_update($form, $form_state) {
  * Updates selected reservations.
  */
 function alma_user_ding_reservation_list_form_remove($form, $form_state) {
-  $creds = _alma_user_get_credentials($form_state['values']['account']);
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
   $reservations_ids = array_filter($form_state['values']['selected']);
   foreach ($reservations_ids as $reservations_id) {
     alma_client_remove_reservation($creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
@@ -464,10 +318,7 @@ function alma_user_form_ding_cart_list_form_alter(&$form, &$form_state) {
   $form['options']['pickup_branch'] = array(
     '#type' => 'select',
     '#title' => t('Pickup branch'),
-    '#options' => array(
-      1 => 'Somewhere',
-      2 => 'Somewhere else',
-    ),
+    '#options' => alma_client()->get_reservation_branches(),
   );
 
   $form['reserve'] = array(

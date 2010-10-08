@@ -15,7 +15,7 @@ $plugin = array(
 /**
  */
 function alma_user_loan_get_loans($account, $redirect = FALSE) {
-  $creds = _alma_user_get_credentials($account, $redirect);
+  $creds = ding_library_user_get_credentials($account, $redirect);
   if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
     return $creds;
   }
@@ -54,7 +54,7 @@ function alma_user_loan_details($loan) {
 /**
  */
 function alma_user_loan_renew_loans($account, $loan_ids) {
-  $creds = _alma_user_get_credentials($user, $redirect);
+  $creds = ding_library_user_get_credentials($user, $redirect);
   if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
     return $creds;
   }

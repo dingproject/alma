@@ -26,8 +26,61 @@ $plugin = array(
  *   TRUE if the account is authenticated.
  */
 function alma_user_user_logged_in($account) {
-  $creds = _alma_user_get_credentials($account);
+  $creds = ding_library_user_get_credentials($account);
   return $creds != DING_PROVIDER_AUTH_REQUIRED;
+}
+
+/**
+ *
+ */
+function alma_user_user_authenticate($name, $pass) {
+  $return = array(
+    'result' => FALSE,
+  );
+  $info = alma_client_get_patron_info($name, $pass, TRUE);
+  if (!$info) {
+    // Not found.
+    return;
+  }
+
+  if (isset($info['blocks']) && !empty($info['blocks'])) {
+    $block_codes = alma_user_block_codes();
+    foreach ($user_info['blocks'] as $block) {
+      $return['messages'][] = array(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
+    }
+  }
+
+  $return['result'] = TRUE;
+  $return['creds'] = array(
+    'user_id' => $name,
+    'password' => $pass,
+    'display_name' => $info['user_name'],
+    'mail' => '',
+  );
+
+  if (isset($info['mails'][0]) && valid_email_address($info['mails'][0]['mail'])) {
+    $return['creds']['mail'] = $info['mails'][0]['mail'];
+  }
+
+  return $return;
+}
+
+/**
+ *
+ */
+function alma_user_user_authenticate_finalize($account) {
+  if ($creds = ding_library_user_get_credentials($account)) {
+    $changes = array();
+    if ($account->display_name != $creds['display_name']) {
+      $changes['display_name'] = $creds['display_name'];
+    }
+    if ($account->mail != $creds['mail']) {
+      $changes['mail'] = $creds['mail'];
+    }
+    if (sizeof($changes)) {
+      user_save($account, $changes);
+    }
+  }
 }
 
 /**
@@ -152,7 +205,7 @@ function alma_user_user_library_settings_form_validate($form, &$form_state) {
  * Submit handler for user library settings.
  */
 function alma_user_user_library_settings_form_submit($form, &$form_state) {
-  $creds = _alma_user_get_credentials($form_state['values']['account']);
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
 
   $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
 
