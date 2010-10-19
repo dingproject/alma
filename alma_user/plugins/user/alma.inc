@@ -51,6 +51,7 @@ function alma_user_user_authenticate($name, $pass) {
   }
 
   $return['result'] = TRUE;
+  $return['authname'] = md5(drupal_get_private_key() . $info['patron_id']) . '@alma_user';
   $return['creds'] = array(
     'user_id' => $name,
     'password' => $pass,
