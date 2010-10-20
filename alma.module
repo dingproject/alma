@@ -48,7 +48,14 @@ function alma_ctools_plugin_directory($module, $plugin) {
  *  Make part of provider.
  */
 function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
-  return alma_client_get_branches($optional, $reset);
+  $org = alma_get_organisation($reset);
+  $branches = $org['branch'];
+
+  if ($optional) {
+    $branches = array_merge(array('' => t('- None -')), $branches);
+  }
+
+  return $branches;
 }
 
 /**
@@ -116,62 +123,20 @@ function alma_get_organisation($reset=FALSE) {
   }
   else {
     $organisation = array(
-      'branch' => alma_client_get_branches(FALSE, TRUE),
-      'department' => alma_client_get_departments(TRUE),
-      'location' => alma_client_get_locations(TRUE),
-      'sublocation' => alma_client_get_sublocations(TRUE),
-      'collection' => alma_client_get_collections(TRUE),
+      'branch' => alma_client_invoke('get_branches'),
+      'department' => alma_client_invoke('get_departments'),
+      'location' => alma_client_invoke('get_locations'),
+      'sublocation' => alma_client_invoke('get_sublocations'),
+      'collection' => alma_client_invoke('get_collections'),
     );
 
     // Cache output for 24 hours if we got all the data correctly.
-    if ($organisation['branches'] && $organisation['departments'] && $organisation['locations'] && $organisation['sublocations'] && $organisation['collections']) {
+    if ($organisation['branch'] && $organisation['department'] && $organisation['location'] && $organisation['sublocation'] && $organisation['collection']) {
       cache_set('alma_get_organisation', $organisation, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 86400);
     }
   }
 
   return $organisation;
-}
-
-/**
- * Get list of library branches.
- *
- * @param boolean $optional
- *    If true, add a "none" option to the branch list.
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of branch names, keyed by their ID.
- */
-function alma_client_get_branches($optional=TRUE, $reset=FALSE) {
-  static $branches;
-
-  if (!isset($branches) || $reset) {
-    $cache = ($reset) ? FALSE : cache_get('get_branches', 'cache_alma_requests');
-    if ($cache && !empty($cache->data)) {
-      $branches = $cache->data;
-    }
-    else {
-      try {
-        $branches = alma_client()->get_branches();
-
-        // If request for whatever reason fails, return an empty array
-        // immediately so it won't be cached.
-        if (empty($branches)) {
-          return array();
-        }
-      } catch (Exception $e) {
-        watchdog('alma_user', 'get_branches error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
-        return array();
-      }
-    }
-    // Cache output for 8 hours.
-    cache_set('get_branches', $branches, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  if ($optional) {
-    $branches = array_merge(array('' => t('- None -')), $branches);
-  }
-  return $branches;
 }
 
 /**
@@ -213,150 +178,6 @@ function alma_client_get_reservation_branches($optional=TRUE, $reset=FALSE) {
     $branches = array_merge(array('' => t('- None -')), $branches);
   }
   return $branches;
-}
-
-/**
- * Get list of library departments.
- *
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of department names, keyed by their ID.
- */
-function alma_client_get_departments($reset=FALSE) {
-  // Return data from cache if available.
-  $cache = ($reset) ? FALSE : cache_get('get_departments', 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    $departments = $cache->data;
-  }
-  else {
-    try {
-      $departments = alma_client()->get_departments();
-
-      // If request for whatever reason fails, return an empty array
-      // immediately so it won't be cached.
-      if (empty($departments)) {
-        return array();
-      }
-
-    } catch (Exception $e) {
-      watchdog('alma_user', 'get_departments error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-      return array();
-    }
-
-    // Cache output for 8 hours.
-    cache_set('get_departments', $departments, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  return $departments;
-}
-
-/**
- * Get list of library locations.
- *
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of location names, keyed by their ID.
- */
-function alma_client_get_locations($reset=FALSE) {
-  // Return data from cache if available.
-  $cache = ($reset) ? FALSE : cache_get('get_locations', 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    $locations = $cache->data;
-  }
-  else {
-    try {
-      $locations = alma_client()->get_locations();
-
-      // If request for whatever reason fails, return an empty array
-      // immediately so it won't be cached.
-      if (empty($locations)) {
-        return array();
-      }
-
-    } catch (Exception $e) {
-      watchdog('alma_user', 'get_locations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-      return array();
-    }
-
-    // Cache output for 8 hours.
-    cache_set('get_locations', $locations, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  return $locations;
-}
-
-/**
- * Get list of library sublocations.
- *
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of sublocation names, keyed by their ID.
- */
-function alma_client_get_sublocations($reset=FALSE) {
-  // Return data from cache if available.
-  $cache = ($reset) ? FALSE : cache_get('get_sublocations', 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    $sublocations = $cache->data;
-  }
-  else {
-    try {
-      $sublocations = alma_client()->get_sublocations();
-
-      // If request for whatever reason fails, return an empty array
-      // immediately so it won't be cached.
-      if (empty($sublocations)) {
-        return array();
-      }
-
-    } catch (Exception $e) {
-      watchdog('alma_user', 'get_sublocations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-      return array();
-    }
-
-    // Cache output for 8 hours.
-    cache_set('get_sublocations', $sublocations, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  return $sublocations;
-}
-
-/**
- * Get list of library collections.
- *
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of collection names, keyed by their ID.
- */
-function alma_client_get_collections($reset=FALSE) {
-  // Return data from cache if available.
-  $cache = ($reset) ? FALSE : cache_get('get_collections', 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    $collections = $cache->data;
-  }
-  else {
-    try {
-      $collections = alma_client()->get_collections();
-
-      // If request for whatever reason fails, return an empty array
-      // immediately so it won't be cached.
-      if (empty($collections)) {
-        return array();
-      }
-
-    } catch (Exception $e) {
-      watchdog('alma_user', 'get_collections error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-      return array();
-    }
-
-    // Cache output for 8 hours.
-    cache_set('get_collections', $collections, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  return $collections;
 }
 
 /**
@@ -708,32 +529,6 @@ function alma_client_catalogue_record_detail($alma_ids) {
     watchdog('alma_user', 'catalogue_record_detail error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 
-  return $data;
-}
-
-/**
- * Get availability for one or more catalogue records.
- *
- * @param string $alma_ids
- *    IDs for the records, comma-separated.
- * @return array
- *    Information about the record.
- */
-function alma_client_get_availability($alma_ids) {
-  // Return data from cache if available.
-  $cache = cache_get('alma_availability:' . $alma_ids, 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    return $cache->data;
-  }
-
-  try {
-    $data = alma_client()->get_availability($alma_ids);
-    if (empty($data)) { return array(); }
-  } catch (Exception $e) {
-    watchdog('alma_user', 'get_availability error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-  // Cache output for 8 hours.
-  cache_set('get_availability:' . $alma_ids, $data, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
   return $data;
 }
 

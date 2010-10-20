@@ -15,18 +15,36 @@ $plugin = array(
 /**
  */
 function alma_availability_items($provider_ids) {
-  $result = alma_client_invoke('get_availability', join(',',$provider_ids));
+  $ids = join(',',$provider_ids);
+  // Return data from cache if available.
+  $cache = cache_get('alma_availability_items:' . $ids, 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    return $cache->data;
+  }
+
+  $result = alma_client_invoke('get_availability', $ids);
   if (!$result) {
     $result = array();
   }
+
+  // Cache output for 8 hours.
+  cache_set('alma_availability_items:' . $ids, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+
   return $result;
 }
 
 /**
  */
 function alma_availability_details($provider_ids) {
+  $ids = join(',',$provider_ids);
+  // Return data from cache if available.
+  $cache = cache_get('alma_availability_details:' . $ids, 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    return $cache->data;
+  }
+
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
-  $details = alma_client_invoke('catalogue_record_detail', join(',',$provider_ids));
+  $details = alma_client_invoke('catalogue_record_detail', $ids);
 
   $org = alma_get_organisation();
   $result = array();
@@ -54,5 +72,9 @@ function alma_availability_details($provider_ids) {
       $result[$alma_id] = $holding;
     }
   }
+
+  // Cache output for 8 hours.
+  cache_set('alma_availability_details:' . $ids, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
+
   return $result;
 }
