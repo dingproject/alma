@@ -21,7 +21,7 @@ function alma_user_loan_get_loans($account, $redirect = FALSE) {
   }
 
   try {
-    $loans =  alma_client()->get_loans($creds['user_id'], $creds['password']);
+    $loans =  alma_client_invoke('get_loans', $creds['user_id'], $creds['password']);
   } catch (Exception $e) {
     watchdog('alma_user', 'get_loans error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
@@ -59,7 +59,7 @@ function alma_user_loan_renew_loans($account, $loan_ids) {
     return $creds;
   }
   try {
-    $res = alma_client()->renew_loan($creds['user_id'], $creds['password'], $loan_ids);
+    $res = alma_client_invoke('renew_loan', $creds['user_id'], $creds['password'], $loan_ids);
     if ($res) {
       // Seemed to work...
       return array();

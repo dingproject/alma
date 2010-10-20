@@ -172,35 +172,35 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
 
     switch ($field_name) {
       case 'absent':
-        alma_client()->change_absent_period($creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
+        alma_client_invoke('change_absent_period', $creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
       break;
       case 'branch':
-        alma_client()->change_patron_preferences($creds['user_id'], $creds['password'], $value);
+        alma_client_invoke('change_patron_preferences', $creds['user_id'], $creds['password'], $value);
       break;
       case 'email':
         if (empty($old_info['mails'][0]['id']) && !empty($value)) {
-          alma_client()->add_email_address($creds['user_id'], $creds['password'], $value);
+          alma_client_invoke('add_email_address', $creds['user_id'], $creds['password'], $value);
         }
         elseif (!empty($old_info['mails'][0]['id']) && !empty($value)) {
-          alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $value);
+          alma_client_invoke('change_email_address', $creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $value);
         }
       break;
       case 'password':
-        alma_client()->change_pin($creds['user_id'], $creds['password'], $value);
+        alma_client_invoke('change_pin', $creds['user_id'], $creds['password'], $value);
       break;
       case 'phones':
         if (!empty($value)) {
           if (empty($old_info['phones'][0]['id'])) {
-            alma_client()->add_phone_number($creds['user_id'], $creds['password'], $value);
+            alma_client_invoke('add_phone_number', $creds['user_id'], $creds['password'], $value);
           }
           else {
-            alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
+            alma_client_invoke('change_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
           }
           // If user does not already have a SMS message service then add one
           if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||
               !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
             // Add a due date alerts as SMS service per default
-            alma_client()->add_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+            alma_client_invoke('add_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
             // Update local user settings accordingly
             $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
@@ -210,9 +210,9 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
         }
         else {
           if (!empty($old_info['phones'][0]['id'])) {
-            alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
+            alma_client_invoke('remove_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
             // Also remove SMS messaging service
-            alma_client()->remove_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+            alma_client_invoke('remove_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
             // Update local user settings accordingly
             unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
