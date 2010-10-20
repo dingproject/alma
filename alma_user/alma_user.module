@@ -68,7 +68,6 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
             alma_client_invoke('add_email_address', $creds['user_id'], $creds['password'], $edit['mail']);
           }
           elseif (!empty($old_info['mails'][0]['id']) && !empty($edit['mail'])) {
-            dpm('changing');
             alma_client_invoke('change_email_address', $creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $edit['mail']);
           }
         }
