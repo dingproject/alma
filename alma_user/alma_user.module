@@ -65,20 +65,20 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
       if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
         if ($edit['mail'] != $account->mail) {
           if (empty($old_info['mails'][0]['id']) && !empty($edit['mail'])) {
-            alma_client()->add_email_address($creds['user_id'], $creds['password'], $edit['mail']);
+            alma_client_invoke('add_email_address', $creds['user_id'], $creds['password'], $edit['mail']);
           }
           elseif (!empty($old_info['mails'][0]['id']) && !empty($edit['mail'])) {
             dpm('changing');
-            alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $edit['mail']);
+            alma_client_invoke('change_email_address', $creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $edit['mail']);
           }
         }
         if ($edit['alma_user_phone'] != $old_info['phones'][0]['phone']) {
           if (!empty($edit['alma_user_phone'])) {
             if (empty($old_info['phones'][0]['id'])) {
-              alma_client()->add_phone_number($creds['user_id'], $creds['password'], $edit['alma_user_phone']);
+              alma_client_invoke('add_phone_number', $creds['user_id'], $creds['password'], $edit['alma_user_phone']);
             }
             else {
-              alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $edit['alma_user_phone']);
+              alma_client_invoke('change_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $edit['alma_user_phone']);
             }
             // If user does not already have a SMS message service then add one
             if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||

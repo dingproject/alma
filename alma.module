@@ -103,6 +103,32 @@ function alma_client() {
 }
 
 /**
+ * Calls the Alma backend.
+ *
+ * @param $method
+ *   The desired method.
+ * @param ...
+ *   Arguments to the method.
+ *
+ * @return mixed
+ *   NULL on error, or the result of the method call.
+ */
+function alma_client_invoke($method) {
+  $args = func_get_args();
+  array_shift($args); // Lose the method.
+  $client = alma_client();
+
+  try {
+    $result = call_user_func_array(array($client, $method), $args);
+  }
+  catch (Exception $e) {
+    watchdog('alma', '@method error: “@message”', array('@method' => $method, '@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return NULL;
+  }
+  return $result;
+}
+
+/**
  * Get the complete organisation info from Alma.
  *
  * Includes branches, departments, locations, sublocations and
