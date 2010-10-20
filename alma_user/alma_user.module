@@ -84,7 +84,7 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
             if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||
               !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
               // Add a due date alerts as SMS service per default
-              alma_client()->add_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+              alma_client_invoke('add_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
               // Update local user settings accordingly
               $account->message_services = array(
@@ -96,9 +96,9 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
           }
           else {
             if (!empty($old_info['phones'][0]['id'])) {
-              alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
+              alma_client_invoke('remove_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
               // Also remove SMS messaging service
-              alma_client()->remove_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+              alma_client_invoke('remove_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
               // Update local user settings accordingly
               unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
@@ -372,7 +372,7 @@ function alma_user_form_ding_cart_list_form_alter(&$form, &$form_state) {
   $form['options']['pickup_branch'] = array(
     '#type' => 'select',
     '#title' => t('Pickup branch'),
-    '#options' => alma_client()->get_reservation_branches(),
+    '#options' => alma_client_invoke('get_reservation_branches'),
   );
 
   $form['reserve'] = array(
