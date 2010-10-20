@@ -177,6 +177,9 @@ function alma_get_organisation($reset=FALSE) {
  *    Libra extension data like block codes.
  * @return array
  *    The patron information as an array.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_get_patron_info($borr_card, $pin_code, $extended = FALSE) {
   try {
@@ -203,6 +206,9 @@ function alma_client_get_patron_info($borr_card, $pin_code, $extended = FALSE) {
  *    Library patron's four digit PIN code.
  * @return array
  *    The reservations as an array.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_get_reservations($borr_card, $pin_code) {
   try {
@@ -223,6 +229,9 @@ function alma_client_get_reservations($borr_card, $pin_code) {
  *    Library patron's four digit PIN code.
  * @return array
  *    The loans as an array.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_get_debts($borr_card, $pin_code) {
   try {
@@ -243,6 +252,9 @@ function alma_client_get_debts($borr_card, $pin_code) {
  *    Library patron's current four digit PIN code.
  * @param array $reservation
  *    Data for the reservation we're adding.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
   // If reservation does not have a valid_to date, use the default
@@ -276,6 +288,9 @@ function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
  *    Data for the reservation we're changing.
  * @param array $changes
  *    Array of changes to apply.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_change_reservation($borr_card, $pin_code, $reservation, $changes) {
   try {
@@ -297,6 +312,9 @@ function alma_client_change_reservation($borr_card, $pin_code, $reservation, $ch
  *    Library patron's four digit PIN code.
  * @param array $reservation
  *    Data for the reservation we're removing.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
   try {
@@ -319,6 +337,9 @@ function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
  * @param string $item_id
  *    Local ID for the item we're checking for.
  * @return boolean
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
   try {
@@ -343,6 +364,9 @@ function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
  *    ID for the records, comma-separated.
  * @return array
  *    Information about the record.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_catalogue_record_detail($alma_ids) {
   if (empty($alma_ids)) {
@@ -366,6 +390,9 @@ function alma_client_catalogue_record_detail($alma_ids) {
  *
  * @param string $debt_ids
  *    IDs for the debts, comma-separated.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_add_payment($debt_ids, $order_id = NULL) {
   try {
@@ -385,6 +412,9 @@ function alma_client_add_payment($debt_ids, $order_id = NULL) {
  *    Library patron's current four digit PIN code.
  * @param string $branch_code
  *    New preferred branch.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_change_patron_preferences($borr_card, $pin_code, $branch_code) {
   try {
@@ -406,6 +436,9 @@ function alma_client_change_patron_preferences($borr_card, $pin_code, $branch_co
  *    Absent period start date.
  * @param string $to_date
  *    Absent period start date.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_add_absent_period($borr_card, $pin_code, $from_date, $to_date) {
   try {
@@ -429,6 +462,9 @@ function alma_client_add_absent_period($borr_card, $pin_code, $from_date, $to_da
  *    Absent period start date.
  * @param string $to_date
  *    Absent period start date.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_change_absent_period($borr_card, $pin_code, $absent_id, $from_date, $to_date) {
   try {
@@ -448,6 +484,9 @@ function alma_client_change_absent_period($borr_card, $pin_code, $absent_id, $fr
  *    Library patron's current four digit PIN code.
  * @param string $absent_id
  *    ID for existing period.
+ *
+ * @todo
+ *  Refactor callers to use alma_client_invoke and remove this.
  */
 function alma_client_remove_absent_period($borr_card, $pin_code, $absent_id) {
   try {
