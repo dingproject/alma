@@ -42,23 +42,6 @@ function alma_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
- * Implements hook_ding_get_branches()
- *
- * @todo
- *  Make part of provider.
- */
-function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
-  $org = alma_get_organisation($reset);
-  $branches = $org['branch'];
-
-  if ($optional) {
-    $branches = array_merge(array('' => t('- None -')), $branches);
-  }
-
-  return $branches;
-}
-
-/**
  * Return a fully instantiated AlmaClient instance.
  */
 function alma_client() {
