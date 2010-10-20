@@ -140,7 +140,7 @@ function alma_user_user_library_settings_form(&$form_state, $account) {
   $form['preferred_branch'] = array(
     '#type'          => 'select',
     '#title'         => t('Preferred library'),
-    '#options'       => alma_client()->get_reservation_branches(),
+    '#options'       => alma_client_invoke('get_reservation_branches'),
     '#default_value' => $account->preferred_branch,
   );
 

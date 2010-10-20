@@ -266,7 +266,7 @@ function alma_user_form_ding_reservation_list_form_alter(&$form, $form_state) {
   $form['options']['new_pickup_branch'] = array(
     '#type' => 'select',
     '#title' => t('New pickup branch'),
-    '#options' => alma_client_get_reservation_branches(),
+    '#options' => alma_client_invoke('get_reservation_branches'),
   );
 
   $form['buttons']['update'] = array(
