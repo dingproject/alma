@@ -34,53 +34,12 @@ function alma_requirements($phase) {
 
 /**
  * Implements hook_ding_get_branches()
+ *
+ * @todo
+ *  Make part of provider.
  */
 function alma_ding_library_get_branches($optional=TRUE, $reset=FALSE) {
   return alma_client_get_branches($optional, $reset);
-}
-
-/**
- * Implements hook_ding_get_reservation_branches().
- */
-function alma_ding_library_get_reservation_branches($optional = TRUE, $reset = FALSE) {
-  return alma_client_get_reservation_branches($optional, $reset);
-}
-
-/**
- * Implements hook_ding_library_get_organisation().
- */
-function alma_ding_library_get_organisation() {
-  return alma_get_organisation();
-}
-
-/**
- * Implements hook_ding_get_object_details().
- */
-function alma_ding_get_object_details($ids) {
-  $records = alma_client_catalogue_record_detail($ids);
-  return $records;
-}
-
-/**
- * Implements hook_ding_get_object_details().
- */
-function alma_ting_availability_item($item_id) {
-  $availability = alma_client_get_availability($item_id);
-  return $availability;
-}
-
-/**
- * Implements hook_ting_availability_item_details().
- */
-function alma_ting_availability_item_details($item_id) {
-  $details = alma_client_catalogue_record_detail($item_id);
-
-  // Use alma ids a local ids
-  foreach ($details['records'] as &$record) {
-    $record['local_id'] = $record['alma_id'];
-  }
-
-  return $details;
 }
 
 /**
