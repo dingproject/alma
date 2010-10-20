@@ -78,7 +78,7 @@ function alma_client() {
 }
 
 /**
- * Calls the Alma backend.
+ * Calls the Alma backend, possibly caching the result.
  *
  * @param $method
  *   The desired method.
@@ -89,8 +89,19 @@ function alma_client() {
  *   NULL on error, or the result of the method call.
  */
 function alma_client_invoke($method) {
+  static $cached_methods = array(
+    'get_reservation_branches' => 28800,
+  );
   $args = func_get_args();
   array_shift($args); // Lose the method.
+  if (isset($cached_methods[$method])) {
+    // Return data from cache if available.
+    $cid = 'alma:' . $method . ":" . md5(serialize($args));
+    $cache = cache_get($cid, 'cache_alma_requests');
+    if ($cache && !empty($cache->data)) {
+      return $cache->data;
+    }
+  }
   $client = alma_client();
 
   try {
@@ -100,6 +111,57 @@ function alma_client_invoke($method) {
     watchdog('alma', '@method error: “@message”', array('@method' => $method, '@message' => $e->getMessage(), WATCHDOG_ERROR));
     return NULL;
   }
+
+  if (isset($cid) && $result) {
+    cache_set($cid, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + $cached_methods[$method]);
+  }
+
+  return $result;
+}
+
+/**
+ * Clear the cache of a Alma method call.
+ */
+function alma_client_clear_cache($method) {
+  $cid = 'alma:' . $method . ":" . md5(serialize($args));
+  $cache = cache_clear_all($cid, 'cache_alma_requests');
+
+}
+
+/**
+ * Calls the Alma backend, caching the result.
+ *
+ * @param $method
+ *   The desired method.
+ * @param ...
+ *   Arguments to the method.
+ *
+ * @return mixed
+ *   NULL on error, or the result of the method call.
+ */
+function alma_client_cached($method) {
+  $args = func_get_args();
+  array_shift($args); // Lose the method.
+
+  // Return data from cache if available.
+  $cid = 'alma:' . $method . ":" . md5(serialize($args));
+  $cache = cache_get($cid, 'cache_alma_requests');
+  if ($cache && !empty($cache->data)) {
+    return $cache->data;
+  }
+
+  $client = alma_client();
+
+  try {
+    $result = call_user_func_array(array($client, $method), $args);
+  }
+  catch (Exception $e) {
+    watchdog('alma', '@method error: “@message”', array('@method' => $method, '@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return NULL;
+  }
+
+  cache_set($cid, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 86400);
+
   return $result;
 }
 
@@ -137,47 +199,6 @@ function alma_get_organisation($reset=FALSE) {
   }
 
   return $organisation;
-}
-
-/**
- * Get list of library branches where patrons can fetch their reservations.
- *
- * @param boolean $optional
- *    If true, add a "none" option to the branch list.
- * @param boolean $reset
- *    Optional. If TRUE reset the cached data and reload.
- * @return array
- *    Array of branch names, keyed by their ID.
- */
-function alma_client_get_reservation_branches($optional=TRUE, $reset=FALSE) {
-  // Return data from cache if available.
-  $cache = ($reset) ? FALSE : cache_get('get_reservation_branches', 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    $branches = $cache->data;
-  }
-  else {
-    try {
-      $branches = alma_client()->get_reservation_branches();
-
-      // If request for whatever reason fails, return an empty array
-      // immediately so it won't be cached.
-      if (empty($branches)) {
-        return array();
-      }
-
-    } catch (Exception $e) {
-      watchdog('alma_user', 'get_reservation_branches error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-      return array();
-    }
-
-    // Cache output for 8 hours.
-    cache_set('get_reservation_branches', $branches, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
-  }
-
-  if ($optional) {
-    $branches = array_merge(array('' => t('- None -')), $branches);
-  }
-  return $branches;
 }
 
 /**
