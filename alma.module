@@ -33,6 +33,15 @@ function alma_requirements($phase) {
 }
 
 /**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function alma_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ding_provider') {
+    return "plugins/$plugin";
+  }
+}
+
+/**
  * Implements hook_ding_get_branches()
  *
  * @todo
@@ -107,11 +116,11 @@ function alma_get_organisation($reset=FALSE) {
   }
   else {
     $organisation = array(
-      'branches' => alma_client_get_branches(FALSE, TRUE),
-      'departments' => alma_client_get_departments(TRUE),
-      'locations' => alma_client_get_locations(TRUE),
-      'sublocations' => alma_client_get_sublocations(TRUE),
-      'collections' => alma_client_get_collections(TRUE),
+      'branch' => alma_client_get_branches(FALSE, TRUE),
+      'department' => alma_client_get_departments(TRUE),
+      'location' => alma_client_get_locations(TRUE),
+      'sublocation' => alma_client_get_sublocations(TRUE),
+      'collection' => alma_client_get_collections(TRUE),
     );
 
     // Cache output for 24 hours if we got all the data correctly.
