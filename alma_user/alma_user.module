@@ -332,7 +332,7 @@ function alma_user_ding_reservation_list_form_update($form, $form_state) {
   }
   $res = TRUE;
   foreach ($reservations_ids as $reservations_id) {
-    alma_client_change_reservation($creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id], $changes);
+    alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id], $changes);
   }
   // AlmaClient doesn't check for success, so why should we?
   drupal_set_message(t('Reservations updated.'));
