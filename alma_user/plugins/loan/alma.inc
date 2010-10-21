@@ -37,7 +37,7 @@ function alma_user_loan_details($loan) {
       $loan['ting_object'] = $object;
     }
     else {
-      $data = alma_client_catalogue_record_detail($loan['record_id']);
+      $data = alma_client_invoke('catalogue_record_detail', $loan['record_id']);
       $details = $data['records'][$loan['record_id']];
       $loan['title'] = $details['titles'][0];
       $loan['authors'] = implode(', ', $details['authors']);
