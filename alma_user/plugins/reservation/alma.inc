@@ -27,7 +27,7 @@ function alma_user_reservation_create($user, $item_id) {
       'valid_from'    => date('Y-m-d'),
       'valid_to'      => date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400),
     );
-    $result = alma_client_add_reservation($creds['user_id'], $creds['password'], $params);
+    $result = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
   }
 
   return $result;
@@ -36,7 +36,7 @@ function alma_user_reservation_create($user, $item_id) {
 
 function alma_user_reservation_list($user) {
   $creds = ding_library_user_get_credentials($user, $redirect);
-  $reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
+  $reservations = alma_client_invoke('get_reservations', $creds['user_id'], $creds['password']);
   return $reservations;
 }
 
@@ -57,5 +57,13 @@ function alma_user_reservation_details($reservation) {
  */
 function alma_user_reservation_exists($user, $item_id) {
   $creds = ding_library_user_get_credentials($user);
-  return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
+
+  $reservations = alma_client_invoke('get_reservations', $borr_card, $pin_code);
+  foreach ($reservations as $res) {
+    if ($res['record_id'] == $item_id) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
 }

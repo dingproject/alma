@@ -347,7 +347,7 @@ function alma_user_ding_reservation_list_form_remove($form, $form_state) {
   $creds = ding_library_user_get_credentials($form_state['values']['account']);
   $reservations_ids = array_filter($form_state['values']['selected']);
   foreach ($reservations_ids as $reservations_id) {
-    alma_client_remove_reservation($creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
+    alma_client_invoke('remove_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
   }
   drupal_set_message(t('Reservations deleted.'));
 }
