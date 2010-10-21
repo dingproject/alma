@@ -422,3 +422,56 @@ function alma_user_preprocess_ding_library_user_personal_info(&$vars) {
     $vars['phone'] = $info['phones'][0]['phone'] ? check_plain($info['phones'][0]['phone']) : '';
   }
 }
+
+// Debt related functions
+
+/**
+ *
+ */
+function alma_user_form_ding_debt_list_form_alter(&$form, $form_state) {
+  if (function_exists('ding_dibs_payment_prepare')) {
+    $form['buttons']['pay'] = array(
+      '#type' => 'submit',
+      '#value' => t('Pay selected'),
+      '#attributes' => array('class' => 'update-button'),
+      '#submit' => array('alma_user_ding_debt_list_form_pay'),
+    );
+  }
+}
+
+/**
+ *
+ */
+function alma_user_ding_debt_list_form_pay($form, &$form_state) {
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    drupal_set_message(t('You must be logged in to pay fines.'), 'error');
+    return;
+  }
+
+  $patron = alma_client_invoke('get_patron_info', $creds['borr_card'], $creds['pin_code']);
+
+  $params = array(
+    'customer_name' => $patron['patron_name'],
+    'customer_address' => $patron['addresses'][0]['street'],
+    'customer_address_2' => $patron['addresses'][0]['care_of'],
+    'customer_city' => $patron['addresses'][0]['city'],
+    'customer_zipcode' => $patron['addresses'][0]['postal_code'],
+    'customer_email' => $patron['mails'][0]['mail'],
+    'customer_phone' => $patron['phones'][0]['phone'],
+    // Send the selected parameters along so we can use them to settle
+    // the debts in Alma.
+    'params' => array('selected_debts' => $form_state['values']['selected']),
+  );
+  ding_dibs_payment_prepare($form_state['values']['total'], $params, 'alma_user_debt_dibs_add_payment');
+}
+
+/**
+ *
+ */
+function alma_user_debt_dibs_add_payment($transaction) {
+  global $user;
+  $creds = ding_library_user_get_credentials($user);
+
+  alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+}
