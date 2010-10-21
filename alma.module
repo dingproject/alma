@@ -148,68 +148,6 @@ function alma_get_organisation($reset=FALSE) {
 }
 
 /**
- * Get a patron's debts
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's four digit PIN code.
- * @return array
- *    The loans as an array.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_get_debts($borr_card, $pin_code) {
-  try {
-    return alma_client()->get_debts($borr_card, $pin_code);
-  } catch (Exception $e) {
-    watchdog('alma_user', 'get_debts error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
- * Pay one or more Alma debts.
- *
- * @param string $debt_ids
- *    IDs for the debts, comma-separated.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_add_payment($debt_ids, $order_id = NULL) {
-  try {
-    $data = alma_client()->add_payment($debt_ids, $order_id);
-  } catch (Exception $e) {
-    watchdog('alma_user', 'add_payment error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-}
-
-/**
- * Change user’s preferred branch.
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's current four digit PIN code.
- * @param string $branch_code
- *    New preferred branch.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_change_patron_preferences($borr_card, $pin_code, $branch_code) {
-  try {
-    $data = alma_client()->change_patron_preferences($borr_card, $pin_code, $branch_code);
-  } catch (Exception $e) {
-    watchdog('alma_user', 'change_patron_preferences error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-}
-
-/**
  * Calculate the time to wait for a reservation.
  *
  * @param array $records
