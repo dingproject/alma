@@ -37,7 +37,7 @@ function alma_user_user_authenticate($name, $pass) {
   $return = array(
     'result' => FALSE,
   );
-  $info = alma_client_get_patron_info($name, $pass, TRUE);
+  $info = alma_client_invoke('get_patron_info', $name, $pass, TRUE);
   if (!$info) {
     // Not found.
     return;
@@ -194,7 +194,7 @@ function alma_user_user_library_settings_form_validate($form, &$form_state) {
 function alma_user_user_library_settings_form_submit($form, &$form_state) {
   $creds = ding_library_user_get_credentials($form_state['values']['account']);
 
-  $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
+  $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
 
   if (isset($form_state['values']['suspend'])) {
     $start = date_format_date($form_state['values']['suspend']['start'], 'custom', DATE_FORMAT_DATE);

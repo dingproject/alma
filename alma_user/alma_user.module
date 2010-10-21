@@ -38,7 +38,7 @@ function alma_user_user($op, &$edit, &$account, $category = NULL) {
       $creds = ding_library_user_get_credentials($account);
 
       if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
-        $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
+        $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
 
         $form['account']['alma_old_values'] = array(
           '#type' => 'value',
