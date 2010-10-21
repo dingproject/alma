@@ -148,29 +148,6 @@ function alma_get_organisation($reset=FALSE) {
 }
 
 /**
- * Get a patron's reservations
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's four digit PIN code.
- * @return array
- *    The reservations as an array.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_get_reservations($borr_card, $pin_code) {
-  try {
-    return alma_client()->get_reservations($borr_card, $pin_code);
-  } catch (Exception $e) {
-    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
  * Get a patron's debts
  *
  * @param string $borr_card
@@ -191,95 +168,6 @@ function alma_client_get_debts($borr_card, $pin_code) {
     watchdog('alma_user', 'get_debts error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
     return FALSE;
   }
-}
-
-/**
- * Add reservation.
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's current four digit PIN code.
- * @param array $reservation
- *    Data for the reservation we're adding.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
-  // If reservation does not have a valid_to date, use the default
-  // interest period from alma_user, if available.
-  if (!isset($reservation['valid_to']) && function_exists('alma_user_user')) {
-    $account = user_load($GLOBALS['user']->uid);
-    $period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ALMA_USER_DEFAULT_INTEREST_PERIOD;
-
-    if ($period > 0) {
-      $reservation['valid_to'] = date('Y-m-d', $_SERVER['REQUEST_TIME'] + $period * 86400);
-    }
-  }
-  try {
-    return alma_client()->add_reservation($borr_card, $pin_code, $reservation);
-  }
-  catch (Exception $e) {
-    watchdog('alma_user', 'add_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
- * Remove a reservation
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's four digit PIN code.
- * @param array $reservation
- *    Data for the reservation we're removing.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
-  try {
-    return alma_client()->remove_reservation($borr_card, $pin_code, $reservation);
-  }
-  catch (Exception $e) {
-    watchdog('alma_user', 'remove_reservation error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-    return FALSE;
-  }
-}
-
-/**
- * Check if user has reservation already.
- *
- * @param string $borr_card
- *    Library patron's borrowing card number. Either just an arbitrary
- *    number printed on their library card or their CPR-code.
- * @param string $pin_code
- *    Library patron's current four digit PIN code.
- * @param string $item_id
- *    Local ID for the item we're checking for.
- * @return boolean
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
-  try {
-    $reservations = alma_client()->get_reservations($borr_card, $pin_code);
-    foreach ($reservations as $res) {
-      if ($res['record_id'] == $item_id) {
-        return TRUE;
-      }
-    }
-  }
-  catch (Exception $e) {
-    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-
-  return FALSE;
 }
 
 /**
