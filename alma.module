@@ -309,34 +309,6 @@ function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
 }
 
 /**
- * Get details about a catalogue record.
- *
- * @param string $alma_ids
- *    ID for the records, comma-separated.
- * @return array
- *    Information about the record.
- *
- * @todo
- *  Refactor callers to use alma_client_invoke and remove this.
- */
-function alma_client_catalogue_record_detail($alma_ids) {
-  if (empty($alma_ids)) {
-    return array();
-  }
-  if (is_array($alma_ids)) {
-    $alma_ids = join(',', $alma_ids);
-  }
-  try {
-    $data = alma_client()->catalogue_record_detail($alma_ids);
-    if (empty($data)) { return array(); }
-  } catch (Exception $e) {
-    watchdog('alma_user', 'catalogue_record_detail error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-
-  return $data;
-}
-
-/**
  * Pay one or more Alma debts.
  *
  * @param string $debt_ids
