@@ -55,33 +55,19 @@ function alma_user_user_authenticate($name, $pass) {
   $return['creds'] = array(
     'user_id' => $name,
     'password' => $pass,
-    'display_name' => $info['user_name'],
-    'mail' => '',
   );
 
+  $return['user'] = array(
+    'display_name' => $info['user_name'],
+    'auth_mail' => '',
+  );
+
+
   if (isset($info['mails'][0]) && valid_email_address($info['mails'][0]['mail'])) {
-    $return['creds']['mail'] = $info['mails'][0]['mail'];
+    $return['user']['auth_mail'] = $info['mails'][0]['mail'];
   }
 
   return $return;
-}
-
-/**
- *
- */
-function alma_user_user_authenticate_finalize($account) {
-  if ($creds = ding_library_user_get_credentials($account)) {
-    $changes = array();
-    if ($account->display_name != $creds['display_name']) {
-      $changes['display_name'] = $creds['display_name'];
-    }
-    if ($account->mail != $creds['mail']) {
-      $changes['mail'] = $creds['mail'];
-    }
-    if (sizeof($changes)) {
-      user_save($account, $changes);
-    }
-  }
 }
 
 /**
