@@ -33,19 +33,7 @@ function alma_user_reservation_create($user, $item_id) {
   return $result;
 }
 
-// // ding_library_user_update_reservation($user, $reservation, $changes)
-// function alma_user_reservation_update($user, $reservation, $changes) {
-//   $creds = _alma_user_get_credentials($user);
-//   alma_client_change_reservation($creds['user_id'], $creds['password'], $reservation, $changes);
-// }
 
-// // ding_library_user_delete_reservation($user, $reservation)
-// function alma_user_reservation_delete($user, $reservation) {
-//   $creds = _alma_user_get_credentials($user);
-//   alma_client()->remove_reservation($creds['user_id'], $creds['password'], $reservation);
-// }
-
-// ding_library_user_get_reservations($user)
 function alma_user_reservation_list($user) {
   $creds = ding_library_user_get_credentials($user, $redirect);
   $reservations = alma_client_get_reservations($creds['user_id'], $creds['password']);
@@ -67,7 +55,6 @@ function alma_user_reservation_details($reservation) {
 /**
  * @return bool
  */
-// ding_library_user_has_reservation($user, $item_id)
 function alma_user_reservation_exists($user, $item_id) {
   $creds = ding_library_user_get_credentials($user);
   return alma_client_user_has_reservation($creds['user_id'], $creds['password'], $item_id);
