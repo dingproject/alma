@@ -118,11 +118,17 @@ function alma_user_update_6008() {
     // We're going around user_save for performance reasons.
     $user = db_fetch_object(db_query("SELECT uid, data FROM {users} WHERE uid = %d", $alma_user->uid));
     if ($user and $user->data = unserialize($user->data)) {
-      $user->data['preferred_branch'] = $alma_user->preferred_branch;
-      $user->data['interest_period'] = $alma_user->interest_period;
-      $user->data['message_services'] = $alma_user->message_services;
-      db_query("UPDATE {users} SET data='%s' WHERE uid = %d", serialize($user->data), $user->uid);
+      if ($alma_user->preferred_branch) {
+        $user->data['preferred_branch'] = $alma_user->preferred_branch;
+      }
+      if ($alma_user->interest_period) {
+        $user->data['interest_period'] = $alma_user->interest_period;
+      }
+      if ($alma_user->message_services) {
+        $user->data['message_services'] = $alma_user->message_services;
+      }
       $auth_name = md5(drupal_get_private_key() . $alma_user->alma_id) . "@alma_user";
+      db_query("UPDATE {users} SET data='%s', name='%s' WHERE uid = %d", serialize($user->data), $auth_name, $user->uid);
       user_set_authmaps($user, array('authname_alma_user' => $auth_name));
     }
     db_query("DELETE FROM {alma_user} WHERE uid = %d", $alma_user->uid);
