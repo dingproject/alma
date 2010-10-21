@@ -204,16 +204,16 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
   if (isset($info['absent_periods']) && !empty($info['absent_periods'])) {
     if (isset($start) && isset($end)) {
       // Update the current period.
-      alma_client_change_absent_period($creds['user_id'], $creds['password'], $info['absent_periods'][0]['id'], $start, $end);
+      alma_client_invoke('change_absent_period', $creds['user_id'], $creds['password'], $info['absent_periods'][0]['id'], $start, $end);
     }
     else {
       // If either date field had no valid value, remove the absent period.
-      alma_client_remove_absent_period($creds['user_id'], $creds['password'], $info['absent_periods'][0]['id']);
+      alma_client_invoke('remove_absent_period', $creds['user_id'], $creds['password'], $info['absent_periods'][0]['id']);
     }
   }
   elseif (isset($start) && isset($end)) {
     // Create a new absent period.
-    alma_client_add_absent_period($creds['user_id'], $creds['password'], $start, $end);
+    alma_client_invoke('add_absent_period', $creds['user_id'], $creds['password'], $start, $end);
   }
 
   if ($form_state['values']['preferred_branch'] != $form_state['values']['account']->preferred_branch) {
