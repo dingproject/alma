@@ -113,16 +113,15 @@ function alma_user_update_6008() {
     $sandbox['total'] = db_result(db_query('SELECT COUNT(DISTINCT uid) FROM {alma_user}'));
   }
 
-  $alma_users = db_query_range("SELECT uid, alma_id, preferred_branch, interest_period, message_services FROM {alma_user} ORDER BY uid ASC", 0, 5);
+  $alma_users = db_query_range("SELECT uid, alma_id, preferred_branch, interest_period, message_services FROM {alma_user} ORDER BY uid ASC", 0, 500);
   while ($alma_user = db_fetch_object($alma_users)) {
-    // Do stuff
-    $user = user_load(array('uid' => $alma_user->uid));
-    if ($user) {
-      user_save($user, array(
-          'preferred_branch' => $alma_user->preferred_branch,
-          'interest_period' => $alma_user->interest_period,
-          'message_services' => $alma_user->message_services,
-        ));
+    // We're going around user_save for performance reasons.
+    $user = db_fetch_object(db_query("SELECT uid, data FROM {users} WHERE uid = %d", $alma_user->uid));
+    if ($user and $user->data = unserialize($user->data)) {
+      $user->data['preferred_branch'] = $alma_user->preferred_branch;
+      $user->data['interest_period'] = $alma_user->interest_period;
+      $user->data['message_services'] = $alma_user->message_services;
+      db_query("UPDATE {users} SET data='%s' WHERE uid = %d", serialize($user->data), $user->uid);
       $auth_name = md5(drupal_get_private_key() . $alma_user->alma_id) . "@alma_user";
       user_set_authmaps($user, array('authname_alma_user' => $auth_name));
     }
