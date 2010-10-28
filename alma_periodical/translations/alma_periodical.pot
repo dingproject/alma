@@ -1,0 +1,42 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  alma_periodical.module: n/a
+#  alma_periodical.info: n/a
+#  ting_periodical.tpl.php: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-10-28 13:14+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: alma_periodical.module:40;47
+msgid "Reserve now"
+msgstr ""
+
+#: alma_periodical.info:0
+msgid "Alma periodical view"
+msgstr ""
+
+#: alma_periodical.info:0
+msgid "Displays periodicals by combining data from Ting and Alma."
+msgstr ""
+
+#: alma_periodical.info:0
+msgid "Axiell"
+msgstr ""
+
+#: ting_periodical.tpl.php:23
+msgid "No issues found."
+msgstr ""
+
