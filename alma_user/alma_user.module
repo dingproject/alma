@@ -26,6 +26,92 @@ function alma_user_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
+ * Implementation of hook_user().
+ */
+function alma_user_user($op, &$edit, &$account, $category = NULL) {
+  if (!$category || $category != 'account') {
+    return;
+  }
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $creds = ding_library_user_get_credentials($account);
+
+      if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
+        $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
+
+        $form['account']['alma_old_values'] = array(
+          '#type' => 'value',
+          '#value' => $info,
+        );
+
+        $form['account']['alma_user_phone'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Phone number'),
+          '#description' => t('Phone number where the library can contact you. Is not published on the web site.'),
+          '#default_value' => $info['phones'][0]['phone'],
+          '#element_validate' => array('ding_base_element_validate_phone_number'),
+          '#weight' => 1,
+        );
+      }
+      return $form;
+      break;
+    case 'validate':
+      break;
+    case 'submit':
+      $old_info = $edit['alma_old_values'];
+      $creds = ding_library_user_get_credentials($account);
+
+      if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
+        if ($edit['mail'] != $account->mail) {
+          if (empty($old_info['mails'][0]['id']) && !empty($edit['mail'])) {
+            alma_client_invoke('add_email_address', $creds['user_id'], $creds['password'], $edit['mail']);
+          }
+          elseif (!empty($old_info['mails'][0]['id']) && !empty($edit['mail'])) {
+            alma_client_invoke('change_email_address', $creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $edit['mail']);
+          }
+        }
+        if ($edit['alma_user_phone'] != $old_info['phones'][0]['phone']) {
+          if (!empty($edit['alma_user_phone'])) {
+            if (empty($old_info['phones'][0]['id'])) {
+              alma_client_invoke('add_phone_number', $creds['user_id'], $creds['password'], $edit['alma_user_phone']);
+            }
+            else {
+              alma_client_invoke('change_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $edit['alma_user_phone']);
+            }
+            // If user does not already have a SMS message service then add one
+            if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||
+              !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
+              // Add a due date alerts as SMS service per default
+              alma_client_invoke('add_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+
+              // Update local user settings accordingly
+              $account->message_services = array(
+                ALMA_SERVICE_METHOD_SMS => array(
+                  ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1
+                )
+              );
+            }
+          }
+          else {
+            if (!empty($old_info['phones'][0]['id'])) {
+              alma_client_invoke('remove_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
+              // Also remove SMS messaging service
+              alma_client_invoke('remove_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+
+              // Update local user settings accordingly
+              unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
+            }
+          }
+
+        }
+        unset($edit['alma_old_values'], $edit['alma_user_phone']);
+      }
+      break;
+  }
+}
+
+/**
  * Implementation of hook_form_alter().
  *
  * Alter the login form to disable the standard Drupal username/password
@@ -35,28 +121,10 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
     case 'user_login_block':
-    case 'ding_library_user_forms_authenticate':
+    case 'ding_library_user_authenticate_form':
       // Since the login name can be a user's CPR-number, that too is hidden.
       $form['name']['#type'] = 'password';
     break;
-
-    case 'user_profile_form':
-      // When we have credentials available, make library patron
-      // information available for altering.
-    	if (isset($form['ding_library_user_info'])) {
-        $form['account']['alma_user_phone'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Phone number'),
-          '#description' => t('Phone number where the library can contact you. Is not published on the web site.'),
-          '#default_value' => $form['ding_library_user_info']['#value']['phones'][0]['phone'],
-        );
-
-        // Add our own validation and submit handling.
-        array_unshift($form['#validate'], 'alma_user_profile_validate');
-        $form['#submit'][] = 'alma_user_profile_submit';
-
-      }
-      break;
   }
 }
 
@@ -70,33 +138,6 @@ function ding_library_user_admin_settings_form_validate($form, &$form_state) {
   if ($form_state['values']['ding_library_user_pin_length'] <= 0) {
     form_set_error('ding_library_user_pin_length', t('PIN code length must be a number larger than zero.'));
   }
-}
-
-
-
-/**
- * Validation for the user profile form.
- */
-function alma_user_profile_validate($form, &$form_state) {
-  if (strlen($form_state['values']['alma_user_phone']) > 0) {
-    $number = preg_replace('/\D+/', '', $form_state['values']['alma_user_phone']);
-    if (strlen($number) != 8 && $number > 20000000) {
-      form_set_error('account][alma_user_name', t('Phone number must be 8 digits.'));
-    }
-    else {
-      // If processed number was valid, set it as the correct value.
-      form_set_value($form['account']['alma_user_phone'], $number, $form_state);
-    }
-  }
-}
-
-/**
- * Implements hook_ding_library_user_get_debts().
- */
-function alma_user_ding_library_user_get_debts($user) {
-  $creds = ding_library_user_get_credentials($user);
-  $debts = alma_client_get_debts($creds['user_id'], $creds['password']);
-  return $debts;
 }
 
 /**
@@ -117,6 +158,9 @@ function alma_user_ding_library_user_get_debts($user) {
  *  );
  * @param Array $old_info
  * @return void
+ *
+ * @todo
+ *  fold into hook_user()
  */
 
 function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = FALSE) {
@@ -128,35 +172,35 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
 
     switch ($field_name) {
       case 'absent':
-        alma_client()->change_absent_period($creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
+        alma_client_invoke('change_absent_period', $creds['user_id'], $creds['password'], $new_info['absent']['id'], $new_info['absent']['from_date'], $new_info['absent']['to_date']);
       break;
       case 'branch':
-        alma_client()->change_patron_preferences($creds['user_id'], $creds['password'], $value);
+        alma_client_invoke('change_patron_preferences', $creds['user_id'], $creds['password'], $value);
       break;
       case 'email':
         if (empty($old_info['mails'][0]['id']) && !empty($value)) {
-          alma_client()->add_email_address($creds['user_id'], $creds['password'], $value);
+          alma_client_invoke('add_email_address', $creds['user_id'], $creds['password'], $value);
         }
         elseif (!empty($old_info['mails'][0]['id']) && !empty($value)) {
-          alma_client()->change_email_address($creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $value);
+          alma_client_invoke('change_email_address', $creds['user_id'], $creds['password'], $old_info['mails'][0]['id'], $value);
         }
       break;
       case 'password':
-        alma_client()->change_pin($creds['user_id'], $creds['password'], $value);
+        alma_client_invoke('change_pin', $creds['user_id'], $creds['password'], $value);
       break;
       case 'phones':
         if (!empty($value)) {
           if (empty($old_info['phones'][0]['id'])) {
-            alma_client()->add_phone_number($creds['user_id'], $creds['password'], $value);
+            alma_client_invoke('add_phone_number', $creds['user_id'], $creds['password'], $value);
           }
           else {
-            alma_client()->change_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
+            alma_client_invoke('change_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id'], $value);
           }
           // If user does not already have a SMS message service then add one
           if (!isset($account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) ||
               !$account->message_services[ALMA_SERVICE_METHOD_SMS][ALMA_SERVICE_TYPE_DUE_DATE_ALERT]) {
             // Add a due date alerts as SMS service per default
-            alma_client()->add_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+            alma_client_invoke('add_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
             // Update local user settings accordingly
             $message_services = array(ALMA_SERVICE_METHOD_SMS => array(ALMA_SERVICE_TYPE_DUE_DATE_ALERT => 1));
@@ -166,9 +210,9 @@ function alma_user_ding_library_user_update_info($creds, $new_info, $old_info = 
         }
         else {
           if (!empty($old_info['phones'][0]['id'])) {
-            alma_client()->remove_phone_number($creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
+            alma_client_invoke('remove_phone_number', $creds['user_id'], $creds['password'], $old_info['phones'][0]['id']);
             // Also remove SMS messaging service
-            alma_client()->remove_message_service($creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
+            alma_client_invoke('remove_message_service', $creds['user_id'], $creds['password'], ALMA_SERVICE_METHOD_SMS, ALMA_SERVICE_TYPE_DUE_DATE_ALERT);
 
             // Update local user settings accordingly
             unset($account->message_services[ALMA_SERVICE_METHOD_SMS]);
@@ -213,7 +257,7 @@ function alma_user_form_ding_reservation_list_form_alter(&$form, $form_state) {
   $form['options']['new_pickup_branch'] = array(
     '#type' => 'select',
     '#title' => t('New pickup branch'),
-    '#options' => alma_client_get_reservation_branches(),
+    '#options' => alma_client_invoke('get_reservation_branches'),
   );
 
   $form['buttons']['update'] = array(
@@ -279,7 +323,7 @@ function alma_user_ding_reservation_list_form_update($form, $form_state) {
   }
   $res = TRUE;
   foreach ($reservations_ids as $reservations_id) {
-    alma_client_change_reservation($creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id], $changes);
+    alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id], $changes);
   }
   // AlmaClient doesn't check for success, so why should we?
   drupal_set_message(t('Reservations updated.'));
@@ -294,7 +338,7 @@ function alma_user_ding_reservation_list_form_remove($form, $form_state) {
   $creds = ding_library_user_get_credentials($form_state['values']['account']);
   $reservations_ids = array_filter($form_state['values']['selected']);
   foreach ($reservations_ids as $reservations_id) {
-    alma_client_remove_reservation($creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
+    alma_client_invoke('remove_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
   }
   drupal_set_message(t('Reservations deleted.'));
 }
@@ -318,7 +362,7 @@ function alma_user_form_ding_cart_list_form_alter(&$form, &$form_state) {
   $form['options']['pickup_branch'] = array(
     '#type' => 'select',
     '#title' => t('Pickup branch'),
-    '#options' => alma_client()->get_reservation_branches(),
+    '#options' => alma_client_invoke('get_reservation_branches'),
   );
 
   $form['reserve'] = array(
@@ -345,4 +389,80 @@ function alma_user_form_ding_cart_list_form_submit($form, &$form_state) {
       drupal_set_message(t('Reservation of “@title” failed. It may be on your reservation list already.', array('@title' => $form['cart']['#value'][$local_id]['title'])), 'error');
     }
   }
+}
+
+/**
+ *
+ */
+function alma_user_preprocess_ding_library_user_personal_info(&$vars) {
+  // Using a cache, as panels causes this to be called twice.
+  static $info_cache;
+  $creds = ding_library_user_get_credentials($vars['account']);
+
+  if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
+    if (!isset($info_cache[$vars['account']->uid])) {
+      $info_cache[$vars['account']->uid] = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
+    }
+    $info = $info_cache[$vars['account']->uid];
+    dpm($info);
+    $fields = array('street', 'postal_code', 'city');
+    foreach ($fields as $field) {
+      $vars[$field] = $info['addresses'][0][$field] ? check_plain($info['addresses'][0][$field]) : '';
+    }
+
+    $vars['phone'] = $info['phones'][0]['phone'] ? check_plain($info['phones'][0]['phone']) : '';
+  }
+}
+
+// Debt related functions
+
+/**
+ *
+ */
+function alma_user_form_ding_debt_list_form_alter(&$form, $form_state) {
+  if (function_exists('ding_dibs_payment_prepare')) {
+    $form['buttons']['pay'] = array(
+      '#type' => 'submit',
+      '#value' => t('Pay selected'),
+      '#attributes' => array('class' => 'update-button'),
+      '#submit' => array('alma_user_ding_debt_list_form_pay'),
+    );
+  }
+}
+
+/**
+ *
+ */
+function alma_user_ding_debt_list_form_pay($form, &$form_state) {
+  $creds = ding_library_user_get_credentials($form_state['values']['account']);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    drupal_set_message(t('You must be logged in to pay fines.'), 'error');
+    return;
+  }
+
+  $patron = alma_client_invoke('get_patron_info', $creds['borr_card'], $creds['pin_code']);
+
+  $params = array(
+    'customer_name' => $patron['patron_name'],
+    'customer_address' => $patron['addresses'][0]['street'],
+    'customer_address_2' => $patron['addresses'][0]['care_of'],
+    'customer_city' => $patron['addresses'][0]['city'],
+    'customer_zipcode' => $patron['addresses'][0]['postal_code'],
+    'customer_email' => $patron['mails'][0]['mail'],
+    'customer_phone' => $patron['phones'][0]['phone'],
+    // Send the selected parameters along so we can use them to settle
+    // the debts in Alma.
+    'params' => array('selected_debts' => $form_state['values']['selected']),
+  );
+  ding_dibs_payment_prepare($form_state['values']['total'], $params, 'alma_user_debt_dibs_add_payment');
+}
+
+/**
+ *
+ */
+function alma_user_debt_dibs_add_payment($transaction) {
+  global $user;
+  $creds = ding_library_user_get_credentials($user);
+
+  alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
 }

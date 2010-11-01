@@ -37,7 +37,7 @@ function alma_user_user_authenticate($name, $pass) {
   $return = array(
     'result' => FALSE,
   );
-  $info = alma_client_get_patron_info($name, $pass, TRUE);
+  $info = alma_client_invoke('get_patron_info', $name, $pass, TRUE);
   if (!$info) {
     // Not found.
     return;
@@ -51,36 +51,23 @@ function alma_user_user_authenticate($name, $pass) {
   }
 
   $return['result'] = TRUE;
+  $return['authname'] = md5(drupal_get_private_key() . $info['user_id']) . '@alma_user';
   $return['creds'] = array(
     'user_id' => $name,
     'password' => $pass,
-    'display_name' => $info['user_name'],
-    'mail' => '',
   );
 
+  $return['user'] = array(
+    'display_name' => $info['user_name'],
+    'auth_mail' => '',
+  );
+
+
   if (isset($info['mails'][0]) && valid_email_address($info['mails'][0]['mail'])) {
-    $return['creds']['mail'] = $info['mails'][0]['mail'];
+    $return['user']['auth_mail'] = $info['mails'][0]['mail'];
   }
 
   return $return;
-}
-
-/**
- *
- */
-function alma_user_user_authenticate_finalize($account) {
-  if ($creds = ding_library_user_get_credentials($account)) {
-    $changes = array();
-    if ($account->display_name != $creds['display_name']) {
-      $changes['display_name'] = $creds['display_name'];
-    }
-    if ($account->mail != $creds['mail']) {
-      $changes['mail'] = $creds['mail'];
-    }
-    if (sizeof($changes)) {
-      user_save($account, $changes);
-    }
-  }
 }
 
 /**
@@ -139,7 +126,7 @@ function alma_user_user_library_settings_form(&$form_state, $account) {
   $form['preferred_branch'] = array(
     '#type'          => 'select',
     '#title'         => t('Preferred library'),
-    '#options'       => alma_client()->get_reservation_branches(),
+    '#options'       => alma_client_invoke('get_reservation_branches'),
     '#default_value' => $account->preferred_branch,
   );
 
@@ -207,7 +194,7 @@ function alma_user_user_library_settings_form_validate($form, &$form_state) {
 function alma_user_user_library_settings_form_submit($form, &$form_state) {
   $creds = ding_library_user_get_credentials($form_state['values']['account']);
 
-  $info = alma_client_get_patron_info($creds['user_id'], $creds['password'], TRUE);
+  $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
 
   if (isset($form_state['values']['suspend'])) {
     $start = date_format_date($form_state['values']['suspend']['start'], 'custom', DATE_FORMAT_DATE);
@@ -217,16 +204,16 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
   if (isset($info['absent_periods']) && !empty($info['absent_periods'])) {
     if (isset($start) && isset($end)) {
       // Update the current period.
-      alma_client_change_absent_period($creds['user_id'], $creds['password'], $info['absent_periods'][0]['id'], $start, $end);
+      alma_client_invoke('change_absent_period', $creds['user_id'], $creds['password'], $info['absent_periods'][0]['id'], $start, $end);
     }
     else {
       // If either date field had no valid value, remove the absent period.
-      alma_client_remove_absent_period($creds['user_id'], $creds['password'], $info['absent_periods'][0]['id']);
+      alma_client_invoke('remove_absent_period', $creds['user_id'], $creds['password'], $info['absent_periods'][0]['id']);
     }
   }
   elseif (isset($start) && isset($end)) {
     // Create a new absent period.
-    alma_client_add_absent_period($creds['user_id'], $creds['password'], $start, $end);
+    alma_client_invoke('add_absent_period', $creds['user_id'], $creds['password'], $start, $end);
   }
 
   if ($form_state['values']['preferred_branch'] != $form_state['values']['account']->preferred_branch) {
@@ -234,7 +221,7 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
     db_query("UPDATE {alma_user} SET preferred_branch = '%s' WHERE uid = %d LIMIT 1;", $form_state['values']['preferred_branch'], $form_state['values']['account']->uid);
 
     // And save the new choice to Alma.
-    alma_client_change_patron_preferences($creds['user_id'], $creds['password'], $form_state['values']['preferred_branch']);
+    alma_client_invoke('change_patron_preferences', $creds['user_id'], $creds['password'], $form_state['values']['preferred_branch']);
   }
   if ($form_state['values']['interest_period'] != $form_state['values']['account']->interest_period) {
     db_query('UPDATE {alma_user} SET interest_period = %d WHERE alma_id = "%s" LIMIT 1;', $form_state['values']['interest_period'], $form_state['values']['account']->library_user_id);

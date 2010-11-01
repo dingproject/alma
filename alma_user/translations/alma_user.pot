@@ -1,0 +1,298 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  alma_user.module: n/a
+#  ding_library_user_personal_info.tpl.php: n/a
+#  plugins/reservation/alma.inc: n/a
+#  plugins/debt/alma.inc: n/a
+#  plugins/loan/alma.inc: n/a
+#  plugins/user/alma.inc: n/a
+#  alma_user.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-10-28 13:14+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: alma_user.module:50
+msgid "Phone number"
+msgstr ""
+
+#: alma_user.module:51
+msgid "Phone number where the library can contact you. Is not published on the web site."
+msgstr ""
+
+#: alma_user.module:139
+msgid "PIN code length must be a number larger than zero."
+msgstr ""
+
+#: alma_user.module:252
+msgid "Valid to"
+msgstr ""
+
+#: alma_user.module:259
+msgid "New pickup branch"
+msgstr ""
+
+#: alma_user.module:265
+msgid "Save changes for selected reservations"
+msgstr ""
+
+#: alma_user.module:273
+msgid "Delete selected reservations"
+msgstr ""
+
+#: alma_user.module:286
+msgid "You can not change expiry on reservations which are ready for pick up"
+msgstr ""
+
+#: alma_user.module:295
+msgid "Invalid date"
+msgstr ""
+
+#: alma_user.module:301
+msgid "Date must be later than today."
+msgstr ""
+
+#: alma_user.module:329
+msgid "Reservations updated."
+msgstr ""
+
+#: alma_user.module:343
+msgid "Reservations deleted."
+msgstr ""
+
+#: alma_user.module:356
+msgid "Not interested after"
+msgstr ""
+
+#: alma_user.module:364
+msgid "Pickup branch"
+msgstr ""
+
+#: alma_user.module:370
+msgid "Reserve selected"
+msgstr ""
+
+#: alma_user.module:389
+msgid "Reservation of “@title” failed. It may be on your reservation list already."
+msgstr ""
+
+#: alma_user.module:426
+msgid "Pay selected"
+msgstr ""
+
+#: alma_user.module:439
+msgid "You must be logged in to pay fines."
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:10
+msgid "Basic information"
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:12
+msgid "Name"
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:14
+msgid "Address"
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:21
+msgid "Contact information"
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:23
+msgid "Mobile phone"
+msgstr ""
+
+#: ding_library_user_personal_info.tpl.php:27
+msgid "E-mail address"
+msgstr ""
+
+#: plugins/reservation/alma.inc:11
+msgid "Alsa reservations plugin"
+msgstr ""
+
+#: plugins/debt/alma.inc:11
+msgid "Alma debt plugin"
+msgstr ""
+
+#: plugins/debt/alma.inc:21
+msgid "Ding Dibs Integration module is required for payments."
+msgstr ""
+
+#: plugins/debt/alma.inc:26
+msgid "Payments"
+msgstr ""
+
+#: plugins/debt/alma.inc:27
+msgid "Enabled"
+msgstr ""
+
+#: plugins/debt/alma.inc:27
+msgid "Disabled"
+msgstr ""
+
+#: plugins/loan/alma.inc:11
+msgid "Alsa loan plugin"
+msgstr ""
+
+#: plugins/loan/alma.inc:71
+msgid "Error renewing: internal error"
+msgstr ""
+
+#: plugins/loan/alma.inc:26;69
+msgid "alma_user"
+msgstr ""
+
+#: plugins/loan/alma.inc:26
+msgid "get_loans error: “@message”"
+msgstr ""
+
+#: plugins/loan/alma.inc:69
+msgid "renew_loan error: “@message”"
+msgstr ""
+
+#: plugins/user/alma.inc:11
+msgid "ALMA user provider"
+msgstr ""
+
+#: plugins/user/alma.inc:49
+msgid "Your account is blocked: %message."
+msgstr ""
+
+#: plugins/user/alma.inc:81
+msgid "Alma base URL"
+msgstr ""
+
+#: plugins/user/alma.inc:82
+msgid "The base URL for constructing request to the Alma REST service, usually something like https://server.example.com:8000/alma/ or http://10.0.0.34:8010/alma/"
+msgstr ""
+
+#: plugins/user/alma.inc:89
+msgid "Enable logging"
+msgstr ""
+
+#: plugins/user/alma.inc:91
+msgid "Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests"
+msgstr ""
+
+#: plugins/user/alma.inc:96
+msgid "Credential cache duration"
+msgstr ""
+
+#: plugins/user/alma.inc:97
+msgid "Determines how long the user’s library system credentials will be cached for. For the duration of the cache, the user will be able to access his personal information and interact with the library system without having to provide his credentials again."
+msgstr ""
+
+#: plugins/user/alma.inc:99
+msgid "5 minutes"
+msgstr ""
+
+#: plugins/user/alma.inc:100
+msgid "15 minutes"
+msgstr ""
+
+#: plugins/user/alma.inc:101
+msgid "30 minutes"
+msgstr ""
+
+#: plugins/user/alma.inc:102
+msgid "1 hour"
+msgstr ""
+
+#: plugins/user/alma.inc:103
+msgid "3 hours"
+msgstr ""
+
+#: plugins/user/alma.inc:104
+msgid "12 hours"
+msgstr ""
+
+#: plugins/user/alma.inc:105
+msgid "1 day"
+msgstr ""
+
+#: plugins/user/alma.inc:106
+msgid "3 days"
+msgstr ""
+
+#: plugins/user/alma.inc:107
+msgid "7 days"
+msgstr ""
+
+#: plugins/user/alma.inc:128
+msgid "Preferred library"
+msgstr ""
+
+#: plugins/user/alma.inc:135
+msgid "Period of interest"
+msgstr ""
+
+#: plugins/user/alma.inc:136
+msgid "How long are you willing to wait for a reservation?"
+msgstr ""
+
+#: plugins/user/alma.inc:138
+msgid "A month"
+msgstr ""
+
+#: plugins/user/alma.inc:139
+msgid "Two months"
+msgstr ""
+
+#: plugins/user/alma.inc:140
+msgid "Three months"
+msgstr ""
+
+#: plugins/user/alma.inc:141
+msgid "Six months"
+msgstr ""
+
+#: plugins/user/alma.inc:142
+msgid "A year"
+msgstr ""
+
+#: plugins/user/alma.inc:149
+msgid "Suspend reservations from"
+msgstr ""
+
+#: plugins/user/alma.inc:156
+msgid "To"
+msgstr ""
+
+#: plugins/user/alma.inc:163
+msgid "Update"
+msgstr ""
+
+#: plugins/user/alma.inc:179
+msgid "Start date must later than today"
+msgstr ""
+
+#: plugins/user/alma.inc:183
+msgid "Start date must be before end date"
+msgstr ""
+
+#: alma_user.info:0
+msgid "Alma user"
+msgstr ""
+
+#: alma_user.info:0
+msgid "Uses the Axiell Alma API to handle user logins and display user data."
+msgstr ""
+
+#: alma_user.info:0
+msgid "Axiell"
+msgstr ""
+

@@ -1,9 +1,0 @@
-; $Id$
-name = Alma DIBS integration
-description = Lets users pay their library dues via DIBS.
-package = Axiell
-php = 5.2
-core = 6.x
-dependencies[] = alma
-dependencies[] = dibs
-

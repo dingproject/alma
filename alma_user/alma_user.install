@@ -7,62 +7,11 @@
  */
 
 /**
- * Implementation of hook_install().
- */
-function alma_user_install() {
-  drupal_install_schema('alma_user');
-}
-
-/**
  * Implementation of hook_uninstall().
  */
 function alma_user_uninstall() {
-  drupal_uninstall_schema('alma_user');
   variable_del('alma_user_credential_cache_duration');
   variable_del('alma_user_pin_length');
-}
-
-/**
- * Implementation of hook_schema().
- */
-function alma_user_schema() {
-  $schema = array();
-
-  $schema['alma_user'] = array(
-    'description' => t('Keep track of the information tying Drupal users to Alma patrons.'),
-    'fields' => array(
-      'alma_id' => array(
-        'description' => 'Alma ID.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-      ),
-      'alma_name' => array(
-        'description' => 'User’s real name from Alma',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'preferred_branch' => array(
-        'description' => '{ding_library}.branch_id for user’s preferred branch.',
-        'type' => 'varchar',
-        'length' => 50,
-      ),
-      'interest_period' => array(
-        'description' => 'Default number of days that a user is willing to wait for a reservation.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'size' => 'small',
-      ),
-      'message_services' => array(
-        'description' => 'User message service preferences.',
-        'type' => 'text',
-      ),
-    ),
-    'primary key' => array('alma_id'),
-  );
-
-  return $schema;
 }
 
 /**
@@ -154,3 +103,47 @@ function alma_user_update_6007() {
   return $ret;
 }
 
+/**
+ * Move alma_user data to user and authmap.
+ */
+function alma_user_update_6008() {
+  $ret = array();
+
+  if (!isset($sandbox['total'])) {
+    $sandbox['total'] = db_result(db_query('SELECT COUNT(DISTINCT uid) FROM {alma_user}'));
+  }
+
+  $alma_users = db_query_range("SELECT uid, alma_id, preferred_branch, interest_period, message_services FROM {alma_user} ORDER BY uid ASC", 0, 500);
+  while ($alma_user = db_fetch_object($alma_users)) {
+    // We're going around user_save for performance reasons.
+    $user = db_fetch_object(db_query("SELECT uid, data FROM {users} WHERE uid = %d", $alma_user->uid));
+    if ($user and $user->data = unserialize($user->data)) {
+      if ($alma_user->preferred_branch) {
+        $user->data['preferred_branch'] = $alma_user->preferred_branch;
+      }
+      if ($alma_user->interest_period) {
+        $user->data['interest_period'] = $alma_user->interest_period;
+      }
+      if ($alma_user->message_services) {
+        $user->data['message_services'] = $alma_user->message_services;
+      }
+      $auth_name = md5(drupal_get_private_key() . $alma_user->alma_id) . "@alma_user";
+      db_query("UPDATE {users} SET data='%s', name='%s' WHERE uid = %d", serialize($user->data), $auth_name, $user->uid);
+      user_set_authmaps($user, array('authname_alma_user' => $auth_name));
+    }
+    db_query("DELETE FROM {alma_user} WHERE uid = %d", $alma_user->uid);
+  }
+
+  $remaining = db_result(db_query('SELECT COUNT(DISTINCT uid) FROM {alma_user}'));
+  $sandbox['done'] = $sandbox['total'] - $remaining;
+
+  $ret['#finished'] = empty($sandbox['total']) ? 1 :
+    ($sandbox['done'] / $sandbox['total']);
+
+  if ($ret['#finished'] == 1) {
+    // Finally, drop the table.
+    db_drop_table($ret, 'alma_user');
+  }
+
+  return $ret;
+}

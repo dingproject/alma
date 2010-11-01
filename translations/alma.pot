@@ -1,0 +1,83 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  alma.info: n/a
+#  plugins/branch/alma.inc: n/a
+#  plugins/availability/alma.inc: n/a
+#  alma.module: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-10-28 13:14+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: alma.info:0
+msgid "Axiell Alma"
+msgstr ""
+
+#: alma.info:0
+msgid "Implementation of Axiell's Alma API for their library system."
+msgstr ""
+
+#: alma.info:0
+msgid "Axiell"
+msgstr ""
+
+#: plugins/branch/alma.inc:11
+msgid "Alma branch plugin"
+msgstr ""
+
+#: plugins/availability/alma.inc:11
+msgid "Alma availability plugin"
+msgstr ""
+
+#: alma.module:163
+msgid "A couple of days"
+msgstr ""
+
+#: alma.module:176
+msgid "About a week"
+msgstr ""
+
+#: alma.module:179
+msgid "About two weeks"
+msgstr ""
+
+#: alma.module:182
+msgid "About a month"
+msgstr ""
+
+#: alma.module:185
+msgid "About two months"
+msgstr ""
+
+#: alma.module:188
+msgid "More than two months"
+msgstr ""
+
+#: alma.module:192
+msgid "Unknown"
+msgstr ""
+
+#: (duplicate) alma.module:27 
+msgid "The Alma module requires SimpleXML to function. Please install and/or enable SimpleXML in your PHP configuration."
+msgstr ""
+
+#: alma.module:94
+msgid "alma"
+msgstr ""
+
+#: alma.module:94
+msgid "@method error: “@message”"
+msgstr ""
+
