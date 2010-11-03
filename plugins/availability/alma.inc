@@ -55,10 +55,14 @@ function alma_availability_details($provider_ids) {
         'available' => $record['available_count'] > 0,
         'reservable' => $record['show_reservation_button'],
         'show_reservation_button' => $record['show_reservation_button'],
+        'reserved_count' => (int) $record['reservation_count'],
         'holdings' => array(),
       );
+      $total = $total_reservable = 0;
       foreach ($record['holdings'] as $branch_holding) {
         $parts = array();
+        $total = (int) $branch_holding['total_count'];
+        $total_reservable = (int) $branch_holding['total_count'] - (int) $branch_holding['reference_count'];
         foreach ($holding_parts as $part) {
           if (!empty($branch_holding[$part . '_id'])) {
             $parts[] = $org[$part][$branch_holding[$part . '_id']];
@@ -69,6 +73,8 @@ function alma_availability_details($provider_ids) {
           $holding['holdings'][] = join(' → ', $parts);
         }
       }
+      $holding['reservable_count'] = $total_reservable;
+      $holding['total_count'] = $total;
       $result[$alma_id] = $holding;
     }
   }
