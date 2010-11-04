@@ -404,7 +404,6 @@ function alma_user_preprocess_ding_library_user_personal_info(&$vars) {
       $info_cache[$vars['account']->uid] = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
     }
     $info = $info_cache[$vars['account']->uid];
-    dpm($info);
     $fields = array('street', 'postal_code', 'city');
     foreach ($fields as $field) {
       $vars[$field] = $info['addresses'][0][$field] ? check_plain($info['addresses'][0][$field]) : '';
