@@ -284,54 +284,6 @@ function alma_user_element_validate_reservation_options(&$element, &$form_state,
   }
 }
 
-// Cart reservation support.
-
-/**
- * Implements hook_form_alter
- */
-function alma_user_form_ding_cart_list_form_alter(&$form, &$form_state) {
-  $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
-
-  $form['options']['expiry'] = array(
-    '#type' => 'date_popup',
-    '#title' => t('Not interested after'),
-    '#date_format' => DATE_FORMAT_DATE,
-    '#date_year_range' => '-0:+2',
-    '#default_value' => date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400),
-  );
-
-  $form['options']['pickup_branch'] = array(
-    '#type' => 'select',
-    '#title' => t('Pickup branch'),
-    '#options' => alma_client_invoke('get_reservation_branches'),
-  );
-
-  $form['reserve'] = array(
-    '#type' => 'submit',
-    '#value' => t('Reserve selected'),
-    '#attributes' => array('class' => 'reserve-button'),
-    '#op' => 'reserve',
-    '#submit' => array('alma_user_ding_cart_list_form_submit'),
-  );
-}
-
-/**
- * Custom submit handler
- */
-function alma_user_form_ding_cart_list_form_submit($form, &$form_state) {
-  foreach ($form_state['values']['selected'] as $local_id) {
-    $reservation = ding_provider_invoke('reservation', 'create', $form_state['values']['account'], $local_id, array('valid_to' => $form_state['values']['expiry'], 'pickup_branch' => $form_state['values']['pickup_branch']));
-
-    // If reservation was successful, remove the item from the cart.
-    if ($reservation and $reservation != DING_PROVIDER_AUTH_REQUIRED) {
-      db_query("DELETE FROM {ding_cart} WHERE uid = %d AND local_id = '%s';", $form_state['values']['account']->uid, $local_id);
-    }
-    else {
-      drupal_set_message(t('Reservation of “@title” failed. It may be on your reservation list already.', array('@title' => $form['cart']['#value'][$local_id]['title'])), 'error');
-    }
-  }
-}
-
 /**
  *
  */

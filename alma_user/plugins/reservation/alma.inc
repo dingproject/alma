@@ -87,6 +87,11 @@ function alma_user_reservation_options($account, $create = TRUE) {
     '#date_year_range' => '-0:+2',
   );
 
+  if ($create) {
+    $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
+    $form['expiry']['#default_value'] = date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400);
+  }
+
   $branches = array();
   if (!$create) {
     $branches = array(
