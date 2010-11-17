@@ -246,101 +246,42 @@ function alma_user_block_codes() {
 
 // Reservation related functions.
 
-function alma_user_form_ding_reservation_list_form_alter(&$form, $form_state) {
-  $form['options']['new_expiry'] = array(
-    '#type' => 'date_popup',
-    '#title' => t('Valid to'),
-    '#date_format' => DATE_FORMAT_DATE,
-    '#date_year_range' => '-0:+2',
-  );
-
-  $form['options']['new_pickup_branch'] = array(
-    '#type' => 'select',
-    '#title' => t('New pickup branch'),
-    '#options' => alma_client_invoke('get_reservation_branches'),
-  );
-
-  $form['buttons']['update'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save changes for selected reservations'),
-    '#attributes' => array('class' => 'update-button'),
-    '#validate' => array('alma_user_ding_reservation_list_form_validate'),
-    '#submit' => array('alma_user_ding_reservation_list_form_update'),
-  );
-
-  $form['buttons']['remove'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete selected reservations'),
-    '#attributes' => array('class' => 'cancel-button'),
-    '#submit' => array('alma_user_ding_reservation_list_form_remove'),
-  );
-
-}
-
-function alma_user_ding_reservation_list_form_validate($form, $form_state) {
+/**
+ * Element validator.
+ */
+function alma_user_element_validate_reservation_options(&$element, &$form_state, $complete_form) {
+  if (form_get_errors()) {
+    return;
+  }
   $reservations = $form_state['values']['reservations'];
+
   foreach (array_filter($form_state['values']['selected']) as $id) {
-    // Detect fetable reservations...
+    // Detect fetchable reservations...
     if (($reservations[$id]['status'] == 'fetchable')) {
-      if (!empty($form_state['values']['new_expiry'])) {
-        form_error($form['selected'][$id], t('You can not change expiry on reservations which are ready for pick up'));
+      if (!empty($form_state['values']['expiry'])) {
+        form_error($complete_form['selected'][$id], t('You can not change expiry on reservations which are ready for pick up'));
+      }
+      if ($form_state['values']['pickup_branch'] != $reservations[$id]['pickup_branch']) {
+        form_error($complete_form['selected'][$id], t('You can not change pickup branch on reservations which are ready for pick up'));
       }
     }
-    // TODO: Something like it to check that pickup_branch is not changed either.
   }
 
-  if (!empty($form_state['values']['new_expiry'])) {
-    list($year, $month, $day) = explode('-', trim($form_state['values']['new_expiry']));
+  if (!empty($form_state['values']['expiry'])) {
+    list($year, $month, $day) = explode('-', trim($form_state['values']['expiry']));
     if (!checkdate($month, $day, $year)) {
-      form_error($form['options']['new_expiry'], t('Invalid date'));
+      form_error($element['expiry'], t('Invalid date'));
     }
 
-    $timestamp = strtotime($form_state['values']['new_expiry']);
+    $timestamp = strtotime($form_state['values']['expiry']);
 
     if ($timestamp <= $_SERVER['REQUEST_TIME']) {
-      form_error($form['options']['new_expiry'], t('Date must be later than today.'));
+      form_error($element['expiry'], t('Date must be later than today.'));
     }
     else {
-      form_set_value($form['options']['new_expiry'], format_date($timestamp, 'custom', 'Y-m-d'), $form_state);
+      form_set_value($element['expiry'], format_date($timestamp, 'custom', 'Y-m-d'), $form_state);
     }
   }
-}
-
-/**
- * Submit function.
- *
- * Updates selected reservations.
- */
-function alma_user_ding_reservation_list_form_update($form, $form_state) {
-  $creds = ding_library_user_get_credentials($form_state['values']['account']);
-  $reservations_ids = array_filter($form_state['values']['selected']);
-  $changes = array();
-  if ($form_state['values']['new_expiry']) {
-    $changes['expiry'] = $form_state['values']['new_expiry'];
-  }
-  if ($form_state['values']['new_pickup_branch']) {
-    $changes['pickup_branch'] = $form_state['values']['new_pickup_branch'];
-  }
-  $res = TRUE;
-  foreach ($reservations_ids as $reservations_id) {
-    alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id], $changes);
-  }
-  // AlmaClient doesn't check for success, so why should we?
-  drupal_set_message(t('Reservations updated.'));
-}
-
-/**
- * Submit function.
- *
- * Updates selected reservations.
- */
-function alma_user_ding_reservation_list_form_remove($form, $form_state) {
-  $creds = ding_library_user_get_credentials($form_state['values']['account']);
-  $reservations_ids = array_filter($form_state['values']['selected']);
-  foreach ($reservations_ids as $reservations_id) {
-    alma_client_invoke('remove_reservation', $creds['user_id'], $creds['password'], $form_state['reservations'][$reservations_id]);
-  }
-  drupal_set_message(t('Reservations deleted.'));
 }
 
 // Cart reservation support.

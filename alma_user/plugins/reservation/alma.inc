@@ -67,3 +67,95 @@ function alma_user_reservation_exists($user, $item_id) {
 
   return FALSE;
 }
+
+
+/**
+ * Return options form fragment for updating/creating reservations.
+ *
+ * @param object $account
+ *   User.
+ * @param boolean $create
+ *   Whether it's for creating or updating reservations.
+ * @return array
+ *   Form fragment.
+ */
+function alma_user_reservation_options($account, $create = TRUE) {
+  $form['expiry'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Valid to'),
+    '#date_format' => DATE_FORMAT_DATE,
+    '#date_year_range' => '-0:+2',
+  );
+
+  $branches = array();
+  if (!$create) {
+    $branches = array(
+      '' => t("No change"),
+    );
+  }
+  $branches += alma_client_invoke('get_reservation_branches');
+
+  $form['pickup_branch'] = array(
+    '#type' => 'select',
+    '#title' => t('New pickup branch'),
+    '#options' => $branches,
+  );
+
+  if ($create) {
+    $form['#element_validate'] = array('alma_user_element_validate_reservation_options');
+  }
+
+  return $form;
+}
+
+/**
+ * Update reservations.
+ *
+ * @param object $account
+ *   The user.
+ * @param array $reservation_ids
+ *   The reservations to update.
+ * @param array $options
+ *   The options gathered through reservation_options.
+ * @return array
+ *   Reservation_id => success.
+ */
+function alma_user_reservation_update($account, $reservation_ids, $options = array()) {
+  $creds = ding_library_user_get_credentials($account);
+  $reservations = alma_user_reservation_list($account);
+  $changes = array();
+  if ($options['expiry']) {
+    $changes['expiry'] = $options['expiry'];
+  }
+  if ($options['pickup_branch']) {
+    $changes['pickup_branch'] = $options['pickup_branch'];
+  }
+  $res = array();
+  foreach ($reservation_ids as $reservation_id) {
+    alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $reservations[$reservation_id], $changes);
+    // AlmaClient doesn't check for success, so why should we?
+    $res[$reservation_id] = TRUE;
+  }
+  return $res;
+}
+
+/**
+ * Delete reservations.
+ *
+ * @param object $account
+ *   The user to delete for.
+ * @param array $reservation_ids
+ *   The reservations to delete.
+ * @return array
+ *   Reservation_id => success.
+ */
+function alma_user_reservation_delete($account, $reservation_ids) {
+  $creds = ding_library_user_get_credentials($account);
+  $reservations = alma_user_reservation_list($account);
+  $res = array();
+  foreach ($reservation_ids as $reservation_id) {
+    alma_client_invoke('remove_reservation', $creds['user_id'], $creds['password'], $reservations[$reservation_id]);
+    $res[$reservation_id] = TRUE;
+  }
+  return $res;
+}
