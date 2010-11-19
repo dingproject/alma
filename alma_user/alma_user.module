@@ -1,19 +1,17 @@
 <?php
 // $Id$
 
-/**
- * Implementation of hook_theme().
- */
-function alma_user_theme($existing, $type, $theme, $path) {
-  return array(
-    'ding_library_user_personal_info' => array(
-      'arguments' => array(
-        'account' => NULL,
-        'alma_data' => NULL,
-      ),
-      'template' => 'ding_library_user_personal_info',
-    ),
-  );
+function alma_user_theme_registry_alter($theme_registry) {
+  $template = 'ding_library_user_personal_info';
+
+  $modulepath = drupal_get_path('module', 'alma_user');
+
+  // Override template.
+  $theme_registry[$template]['template'] = $template;
+  // Override path to template.
+  $theme_registry[$template]['path'] = $modulepath;
+  // Add our path.
+  array_unshift($theme_registry[$template]['theme paths'], $modulepath);
 }
 
 /**
