@@ -13,8 +13,7 @@ $plugin = array(
 );
 
 // ding_library_user_create_reservation($user, $item_id, $optional = FALSE)
-function alma_user_reservation_create($user, $item_id) {
-  $reservation = FALSE;
+function alma_user_reservation_create($user, $item_id, $options = array()) {
   $creds       = ding_library_user_get_credentials($user);
   $has_creds   = is_array($creds);
 
@@ -23,9 +22,9 @@ function alma_user_reservation_create($user, $item_id) {
   if ($has_creds) {
     $params = array(
       'id'            => utf8_decode($item_id),
-      'pickup_branch' => $account->preferred_branch,
+      'pickup_branch' => isset($options['pickup_branch']) ? $options['pickup_branch'] : $account->preferred_branch,
       'valid_from'    => date('Y-m-d'),
-      'valid_to'      => date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400),
+      'valid_to'      => isset($options['expiry']) ? $options['expiry'] : date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400),
     );
     $result = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
   }
