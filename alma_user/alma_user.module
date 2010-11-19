@@ -3,15 +3,16 @@
 
 function alma_user_theme_registry_alter($theme_registry) {
   $template = 'ding_library_user_personal_info';
+  if ($theme_registry[$template]) {
+    $modulepath = drupal_get_path('module', 'alma_user');
 
-  $modulepath = drupal_get_path('module', 'alma_user');
-
-  // Override template.
-  $theme_registry[$template]['template'] = $template;
-  // Override path to template.
-  $theme_registry[$template]['path'] = $modulepath;
-  // Add our path.
-  array_unshift($theme_registry[$template]['theme paths'], $modulepath);
+    // Override template.
+    $theme_registry[$template]['template'] = $template;
+    // Override path to template.
+    $theme_registry[$template]['path'] = $modulepath;
+    // Add our path.
+    array_unshift($theme_registry[$template]['theme paths'], $modulepath);
+  }
 }
 
 /**
