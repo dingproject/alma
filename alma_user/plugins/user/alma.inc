@@ -227,3 +227,15 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
     db_query('UPDATE {alma_user} SET interest_period = %d WHERE alma_id = "%s" LIMIT 1;', $form_state['values']['interest_period'], $form_state['values']['account']->library_user_id);
   }
 }
+
+/**
+ *
+ */
+function alma_user_user_password_change($account, $new_password) {
+  $creds = ding_library_user_get_credentials($account);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    return $creds;
+  }
+
+  return alma_client_invoke('change_pin', $creds['user_id'], $creds['password'], $new_password);
+}
