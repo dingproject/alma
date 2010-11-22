@@ -277,9 +277,6 @@ function alma_user_element_validate_reservation_options(&$element, &$form_state,
     if ($timestamp <= $_SERVER['REQUEST_TIME']) {
       form_error($element['expiry'], t('Date must be later than today.'));
     }
-    else {
-      form_set_value($element['expiry'], format_date($timestamp, 'custom', 'Y-m-d'), $form_state);
-    }
   }
 }
 

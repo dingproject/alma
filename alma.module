@@ -196,3 +196,14 @@ function alma_calculate_wait_time($records) {
 
   return $wait;
 }
+
+/**
+ * Formats a date/time string as a ISO 8601 date without hours, minutes and seconds as required by Alma.
+ * 
+ * @param string $datetime
+ * @return string Date in ISO 8601 YYYY-MM-DD format
+ */
+function alma_format_date($datetime) {
+  $timestamp = (!is_int($datetime)) ? strtotime($datetime) : $datetime;
+  return date('Y-m-d', $timestamp);
+}
