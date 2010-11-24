@@ -37,11 +37,6 @@ function alma_availability_items($provider_ids) {
  */
 function alma_availability_details($provider_ids) {
   $ids = join(',',$provider_ids);
-  // Return data from cache if available.
-  $cache = cache_get('alma_availability_details:' . $ids, 'cache_alma_requests');
-  if ($cache && !empty($cache->data)) {
-    return $cache->data;
-  }
 
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
   $details = alma_client_invoke('catalogue_record_detail', $ids);
@@ -61,15 +56,18 @@ function alma_availability_details($provider_ids) {
       $total = $total_reservable = 0;
       foreach ($record['holdings'] as $branch_holding) {
         $parts = array();
-        $total = (int) $branch_holding['total_count'];
-        $total_reservable = (int) $branch_holding['total_count'] - (int) $branch_holding['reference_count'];
+        $total += (int) $branch_holding['total_count'];
+        // Reservable is total items minus reference (which cannot be
+        // loaned).
+        $reservable = (int) $branch_holding['total_count'] - (int) $branch_holding['reference_count'];
+        $total_reservable += $reservable;
         foreach ($holding_parts as $part) {
           if (!empty($branch_holding[$part . '_id'])) {
             $parts[] = $org[$part][$branch_holding[$part . '_id']];
           }
         }
         $parts = array_filter($parts);
-        if ($parts) {
+        if ($parts && $reservable > $branch_holding['checked_out_count']) {
           $holding['holdings'][] = join(' → ', $parts);
         }
       }
@@ -78,9 +76,6 @@ function alma_availability_details($provider_ids) {
       $result[$alma_id] = $holding;
     }
   }
-
-  // Cache output for 8 hours.
-  cache_set('alma_availability_details:' . $ids, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + 28800);
 
   return $result;
 }

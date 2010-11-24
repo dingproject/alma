@@ -87,7 +87,7 @@ function alma_user_user_settings_form() {
   $form['alma_enable_logging'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable logging'),
-    '#default_value' => variable_get('alma_enable_logging', ''),
+    '#default_value' => variable_get('alma_enable_logging', FALSE),
     '#description' => t('Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests'),
   );
 
