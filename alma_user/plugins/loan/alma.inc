@@ -40,7 +40,7 @@ function alma_user_loan_details($loan) {
       $data = alma_client_invoke('catalogue_record_detail', $loan['record_id']);
       $details = $data['records'][$loan['record_id']];
       $loan['title'] = $details['titles'][0];
-      $loan['authors'] = implode(', ', $details['authors']);
+      $loan['authors'] = (is_array($details['authors'])) ? implode(', ', $details['authors']) : $details['authors'];
       // Remote loans have negative IDs (undocumented Axiell "feature").
       if (intval($loan['id']) < 0) {
         $loan['remote_loan'] = TRUE;
