@@ -24,7 +24,7 @@ function alma_user_reservation_create($user, $item_id, $options = array()) {
       'id'            => utf8_decode($item_id),
       'pickup_branch' => isset($options['pickup_branch']) ? $options['pickup_branch'] : $account->preferred_branch,
       'valid_from'    => date('Y-m-d'),
-      'valid_to'      => isset($options['expiry']) ? alma_format_date($options['expiry']) : alma_format_date($interest_period * 86400),
+      'valid_to'      => isset($options['expiry']) ? alma_format_date($options['expiry']) : alma_format_date($_SERVER['REQUEST_TIME'] + ($interest_period * 86400)),
     );
     $result = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
   }
