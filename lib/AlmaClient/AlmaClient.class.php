@@ -722,6 +722,7 @@ class AlmaClient {
         'organisation_id' => $item->getAttribute('organisationId'),
         'available_count' => (int) $item->getAttribute('nofAvailableForLoan'),
         'shelf_mark' => $item->getAttribute('shelfMark'),
+        'available_from' => $item->getAttribute('firstLoanDueDate'),
       );
     }
 

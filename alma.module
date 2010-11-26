@@ -74,6 +74,7 @@ function alma_client() {
 function alma_client_invoke($method) {
   static $cached_methods = array(
     'get_reservation_branches' => 28800,
+    'catalogue_record_detail' => 28800,
   );
   $args = func_get_args();
   array_shift($args); // Lose the method.
@@ -199,7 +200,7 @@ function alma_calculate_wait_time($records) {
 
 /**
  * Formats a date/time string as a ISO 8601 date without hours, minutes and seconds as required by Alma.
- * 
+ *
  * @param string $datetime
  * @return string Date in ISO 8601 YYYY-MM-DD format
  */
