@@ -174,6 +174,8 @@ function alma_user_user_library_settings_form_validate($form, &$form_state) {
  * Submit handler for user library settings.
  */
 function alma_user_user_library_settings_form_submit($form, &$form_state) {
+  global $user;
+  $updates = array();
   $creds = ding_library_user_get_credentials($form_state['values']['account']);
 
   $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
@@ -199,14 +201,17 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
   }
 
   if ($form_state['values']['preferred_branch'] != $form_state['values']['account']->preferred_branch) {
-    // Update the preferred branch in the database.
-    db_query("UPDATE {alma_user} SET preferred_branch = '%s' WHERE uid = %d LIMIT 1;", $form_state['values']['preferred_branch'], $form_state['values']['account']->uid);
+    // Update user.
+    $updates['preferred_branch'] = $form_state['values']['preferred_branch'];
 
     // And save the new choice to Alma.
     alma_client_invoke('change_patron_preferences', $creds['user_id'], $creds['password'], $form_state['values']['preferred_branch']);
   }
   if ($form_state['values']['interest_period'] != $form_state['values']['account']->interest_period) {
-    db_query('UPDATE {alma_user} SET interest_period = %d WHERE alma_id = "%s" LIMIT 1;', $form_state['values']['interest_period'], $form_state['values']['account']->library_user_id);
+    $updates['interest_period'] = $form_state['values']['interest_period'];
+  }
+  if ($updates) {
+    user_save($user, $updates);
   }
 }
 

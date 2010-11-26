@@ -13,23 +13,41 @@ $plugin = array(
 );
 
 // ding_library_user_create_reservation($user, $item_id, $optional = FALSE)
-function alma_user_reservation_create($user, $item_id, $options = array()) {
-  $creds       = ding_library_user_get_credentials($user);
+function alma_user_reservation_create($account, $item_id, $options = array()) {
+  $creds       = ding_library_user_get_credentials($account);
   $has_creds   = is_array($creds);
+
+  if (alma_user_reservation_exists($account, $item_id)) {
+    return array('status' => DING_RESERVATION_ERROR_RESERVATION_EXISTS);
+  }
 
   $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
 
   if ($has_creds) {
     $params = array(
       'id'            => utf8_decode($item_id),
-      'pickup_branch' => isset($options['pickup_branch']) ? $options['pickup_branch'] : $account->preferred_branch,
       'valid_from'    => date('Y-m-d'),
       'valid_to'      => isset($options['expiry']) ? alma_format_date($options['expiry']) : alma_format_date($_SERVER['REQUEST_TIME'] + ($interest_period * 86400)),
     );
-    $result = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
+    if (isset($options['pickup_branch'])) {
+      $params['pickup_branch'] = $options['pickup_branch'];
+    }
+    else {
+      if (!empty($account->preferred_branch)) {
+        $params['pickup_branch'] = $account->preferred_branch;
+      }
+      else {
+        return array('status' => DING_RESERVATION_ERROR_NO_DEFAULT_BRANCH);
+      }
+    }
+    alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
+    $res = array(
+      'status' => DING_RESERVATION_SUCCESS,
+      'branch' => $params['pickup_branch'],
+    );
   }
 
-  return $result;
+  return $res;
 }
 
 
@@ -55,9 +73,7 @@ function alma_user_reservation_details($reservation) {
  * @return bool
  */
 function alma_user_reservation_exists($user, $item_id) {
-  $creds = ding_library_user_get_credentials($user);
-
-  $reservations = alma_client_invoke('get_reservations', $borr_card, $pin_code);
+  $reservations = alma_user_reservation_list($user);
   foreach ($reservations as $res) {
     if ($res['record_id'] == $item_id) {
       return TRUE;
