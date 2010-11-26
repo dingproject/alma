@@ -100,6 +100,8 @@ function alma_user_user_settings_form() {
  * This is a regular form callback.
  */
 function alma_user_user_library_settings_form(&$form_state, $account) {
+  $creds = ding_library_user_get_credentials($account);
+  $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
   $form['account'] = array(
     '#type' => 'value',
     '#value' => $account,
@@ -130,14 +132,14 @@ function alma_user_user_library_settings_form(&$form_state, $account) {
     '#type'          => 'date_popup',
     '#title'         => t('Suspend reservations from'),
     '#date_format'   => DATE_FORMAT_DATE,
-    '#default_value' => (isset($account->user_info['absent_periods'][0])) ? $account->user_info['absent_periods'][0]['from_date'] : '',
+    '#default_value' => (isset($info['absent_periods'][0])) ? $info['absent_periods'][0]['from_date'] : '',
   );
 
   $form['suspend_end'] = array(
     '#type'          => 'date_popup',
     '#title'         => t('To'),
     '#date_format'   => DATE_FORMAT_DATE,
-    '#default_value' => (isset($account->user_info['absent_periods'][0])) ? $account->user_info['absent_periods'][0]['to_date'] : '',
+    '#default_value' => (isset($info['absent_periods'][0])) ? $info['absent_periods'][0]['to_date'] : '',
   );
 
   $form['submit'] = array(
@@ -180,9 +182,9 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
 
   $info = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
 
-  if (isset($form_state['values']['suspend'])) {
-    $start = alma_format_date($form_state['values']['suspend']['start']);
-    $end = alma_format_date($form_state['values']['suspend']['end']);
+  if (isset($form_state['values']['suspend_start']) || isset($form_state['values']['suspend_start'])) {
+    $start = alma_format_date($form_state['values']['suspend_start']);
+    $end = alma_format_date($form_state['values']['suspend_end']);
   }
 
   if (isset($info['absent_periods']) && !empty($info['absent_periods'])) {
