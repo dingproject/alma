@@ -213,6 +213,7 @@ function alma_user_user_library_settings_form_submit($form, &$form_state) {
   if ($updates) {
     user_save($user, $updates);
   }
+  drupal_set_message(t("Changes saved."));
 }
 
 /**
