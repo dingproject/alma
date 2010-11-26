@@ -41,9 +41,10 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
       }
     }
     alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
+    $org = alma_get_organisation();
     $res = array(
       'status' => DING_RESERVATION_SUCCESS,
-      'branch' => $params['pickup_branch'],
+      'branch' => $org['branch'][$params['pickup_branch']],
     );
   }
 
@@ -53,19 +54,26 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
 
 function alma_user_reservation_list($user) {
   $creds = ding_library_user_get_credentials($user, $redirect);
+  $org_cache = &ctools_static(__FUNCTION__, array());
+  if (empty($org_cache)) {
+    $org_cache = alma_get_organisation();
+  }
   $reservations = alma_client_invoke('get_reservations', $creds['user_id'], $creds['password']);
+  foreach ($reservations as $key => &$reservation) {
+    $reservation['pickup_branch'] = $org_cache['branch'][$reservation['pickup_branch']];
+  }
   return $reservations;
 }
 
 function alma_user_reservation_details($reservation) {
   $cache = &ctools_static(__FUNCTION__, array());
-  if (!isset($cache[$reservation['id']])) {
+
+  if (!isset($cache[$reservation['id']])) {;
     if ($reservation['record_id'] and $object = ting_get_object_by_local_id($reservation['record_id'])) {
       $reservation['ting_object'] = $object;
     }
     $cache[$reservation['id']] = $reservation;
   }
-  // TODO: Fix up pickup_branch to something readable.
   return $cache[$reservation['id']];
 }
 
