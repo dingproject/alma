@@ -125,18 +125,6 @@ function alma_user_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Validation for settings form.
- */
-function ding_library_user_admin_settings_form_validate($form, &$form_state) {
-  // Force PIN length to be an integer.
-  $form_state['values']['ding_library_user_password_length'] = intval($form_state['values']['ding_library_user_password_length']);
-
-  if ($form_state['values']['ding_library_user_pin_length'] <= 0) {
-    form_set_error('ding_library_user_pin_length', t('PIN code length must be a number larger than zero.'));
-  }
-}
-
-/**
  * Get list of Alma block codes with their descriptions.
  */
 function alma_user_block_codes() {
