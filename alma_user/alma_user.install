@@ -147,3 +147,20 @@ function alma_user_update_6008() {
 
   return $ret;
 }
+
+/**
+ * Migrate settings to ding_library_user.
+ */
+function alma_user_update_6009() {
+  $val = variable_get('alma_user_credential_cache_duration', FALSE);
+  if ($val) {
+    variable_set('ding_library_user_credential_cache_duration', $val);
+  }
+  variable_del('alma_user_credential_cache_duration', FALSE);
+
+  $val = variable_get('alma_user_pin_length', FALSE);
+  if ($val) {
+    variable_set('ding_library_user_password_length', $val);
+  }
+  variable_del('alma_user_pin_length');
+}
