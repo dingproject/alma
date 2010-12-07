@@ -14,16 +14,15 @@ $plugin = array(
 
 // ding_library_user_create_reservation($user, $item_id, $optional = FALSE)
 function alma_user_reservation_create($account, $item_id, $options = array()) {
-  $creds       = ding_library_user_get_credentials($account);
-  $has_creds   = is_array($creds);
-
-  if (alma_user_reservation_exists($account, $item_id)) {
-    return array('status' => DING_RESERVATION_ERROR_RESERVATION_EXISTS);
-  }
+  $creds = ding_library_user_get_credentials($account);
 
   $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
 
-  if ($has_creds) {
+  if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
+    if (alma_user_reservation_exists($account, $item_id)) {
+      return array('status' => DING_RESERVATION_ERROR_RESERVATION_EXISTS);
+    }
+
     $params = array(
       'id'            => utf8_decode($item_id),
       'valid_from'    => date('Y-m-d'),
@@ -45,6 +44,11 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
     $res = array(
       'status' => DING_RESERVATION_SUCCESS,
       'branch' => $org['branch'][$params['pickup_branch']],
+    );
+  }
+  else {
+    $res = array(
+      'status' => $creds,
     );
   }
 
