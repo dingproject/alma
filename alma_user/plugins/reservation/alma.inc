@@ -64,6 +64,7 @@ function alma_user_reservation_list($user) {
     if ($reservation['id'] < 0) {
       $reservation['remote_reservation'] = TRUE;
     }
+    $reservation['pickup_branch_id'] = $reservation['pickup_branch'];
     $reservation['pickup_branch'] = $org_cache['branch'][$reservation['pickup_branch']];
   }
   return $reservations;
@@ -169,6 +170,8 @@ function alma_user_reservation_update($account, $reservation_ids, $options = arr
   }
   $res = array();
   foreach ($reservation_ids as $reservation_id) {
+    // Revert branch name to id.
+    $reservations[$reservation_id]['pickup_branch'] = $reservations[$reservation_id]['pickup_branch_id'];
     alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $reservations[$reservation_id], $changes);
     // AlmaClient doesn't check for success, so why should we?
     $res[$reservation_id] = TRUE;
