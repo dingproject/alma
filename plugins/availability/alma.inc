@@ -15,7 +15,7 @@ $plugin = array(
 /**
  */
 function alma_availability_items($provider_ids) {
-  $ids = join(',',$provider_ids);
+  $ids = join(',', $provider_ids);
   // Return data from cache if available.
   $cache = cache_get('alma_availability_items:' . $ids, 'cache_alma_requests');
   if ($cache && !empty($cache->data)) {
@@ -36,7 +36,7 @@ function alma_availability_items($provider_ids) {
 /**
  */
 function alma_availability_details($provider_ids) {
-  $ids = join(',',$provider_ids);
+  $ids = join(',', $provider_ids);
 
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
   $details = alma_client_invoke('catalogue_record_detail', $ids);
@@ -92,6 +92,58 @@ function alma_availability_details($provider_ids) {
       }
       $holding['reservable_count'] = $total_reservable;
       $holding['total_count'] = $total;
+      $result[$alma_id] = $holding;
+    }
+  }
+
+  return $result;
+}
+
+/**
+ *
+ */
+function alma_availability_periodical($provider_ids) {
+  $ids = join(',', $provider_ids);
+
+  $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
+  $details = alma_client_invoke('catalogue_record_detail', $ids);
+
+  $result = array();
+  if ($details && isset($details['records'])) {
+    foreach ($details['records'] as $alma_id => $record) {
+      $holding = array(
+        'local_id' => $alma_id, // Sure hope this holds.
+        'available' => $record['available_count'] > 0,
+        'reservable' => $record['show_reservation_button'],
+        'show_reservation_button' => $record['show_reservation_button'],
+        'reserved_count' => (int) $record['reservation_count'],
+        'issues' => array(),
+      );
+
+      foreach ($record['holdings'] as $year => $issues) {
+        if (!isset($holding['holdings'][$year])) {
+          $holding['issues'][$year] = array();
+        }
+
+        foreach ($issues as $issue_title => $issue_holdings) {
+          $issue = array(
+            'local_id' => $issue_holdings[0]['reservable'], // Yeah, odd, but...
+            'reservable' => FALSE,
+          );
+          $issue['reservable'] = FALSE;
+          foreach ($issue_holdings as $issue_holding) {
+            if ($issue_holding['status'] == 'availableForLoan') {
+              $issue['reservable'] = TRUE;
+              break;
+            }
+          }
+          $holding['issues'][$year][$issue_title] = $issue;
+        }
+        // Sort issues in reverse chronological order.
+        ksort($holding['issues']);
+        $holding['issues'] = array_reverse($holding['issues'], TRUE);
+      }
+
       $result[$alma_id] = $holding;
     }
   }
