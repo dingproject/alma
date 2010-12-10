@@ -85,7 +85,7 @@ function alma_availability_details($provider_ids) {
         }
         else {
           // Convert to a user presentable format.
-          if (preg_match('/^(\d{4})(\d{2})(\d{2})$/', $holding['available_from'], $matches)) {
+          if (preg_match('/^(\d{4})-?(\d{2})-?(\d{2})$/', $holding['available_from'], $matches)) {
             $holding['available_from'] = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
           }
         }
