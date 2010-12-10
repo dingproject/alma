@@ -254,6 +254,10 @@ function alma_user_ding_debt_list_form_pay($form, &$form_state) {
 function alma_user_debt_dibs_add_payment($transaction) {
   global $user;
   $creds = ding_library_user_get_credentials($user);
-
-  alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    watchdog('alma_user', 'No session in add payment. Transaction: @transaction', array('@transaction' => print_r($transaction, TRUE)), WATCHDOG_EMERG);
+  }
+  else {
+    alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+  }
 }
