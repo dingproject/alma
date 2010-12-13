@@ -75,6 +75,7 @@ function alma_client_invoke($method) {
   static $cached_methods = array(
     'get_reservation_branches' => 28800,
     'catalogue_record_detail' => 28800,
+    'get_availability' => 28800,
   );
   $args = func_get_args();
   array_shift($args); // Lose the method.
