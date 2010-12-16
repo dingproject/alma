@@ -64,7 +64,8 @@ function alma_availability_details($provider_ids) {
           }
         }
         $parts = array_filter($parts);
-        if ($parts && $reservable > $branch_holding['checked_out_count']) {
+
+        if ($parts && $branch_holding['total_count'] > $branch_holding['checked_out_count']) {
           $holding['holdings'][] = join(' → ', $parts);
         }
       }
