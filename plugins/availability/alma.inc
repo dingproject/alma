@@ -42,16 +42,16 @@ function alma_availability_details($provider_ids) {
         'reservable' => $record['show_reservation_button'],
         'show_reservation_button' => $record['show_reservation_button'],
         'reserved_count' => (int) $record['reservation_count'],
+        'deferred_period' => FALSE,
         'holdings' => array(),
       );
       $total = $total_reservable = 0;
+
       foreach ($record['holdings'] as $branch_holding) {
-        if ($branch_holding['available_from']) {
-          // As the dates are in YYYYMMDD format, we can just compare them.
-          if (!isset($holding['available_from']) || $holding['available_from'] > $branch_holding['available_from']) {
-            $holding['available_from'] = $branch_holding['available_from'];
-          }
+        if (in_array($branch_holding['collection_id'], array('karens', 'karens-'))) {
+          $holding['deferred_period'] = TRUE;
         }
+
         $parts = array();
         $total += (int) $branch_holding['total_count'];
         // Reservable is total items minus reference (which cannot be
@@ -70,18 +70,6 @@ function alma_availability_details($provider_ids) {
         }
       }
 
-      if (isset($holding['available_from'])) {
-        // Remove if in the past.
-        if ($holding['available_from'] < date('Ymd', $_SERVER['REQUEST_TIME'])) {
-          unset($holding['available_from']);
-        }
-        else {
-          // Convert to a user presentable format.
-          if (preg_match('/^(\d{4})-?(\d{2})-?(\d{2})$/', $holding['available_from'], $matches)) {
-            $holding['available_from'] = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
-          }
-        }
-      }
       $holding['reservable_count'] = $total_reservable;
       $holding['total_count'] = $total;
       $result[$alma_id] = $holding;
