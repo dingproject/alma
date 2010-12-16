@@ -39,12 +39,19 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
         return array('status' => DING_RESERVATION_ERROR_NO_DEFAULT_BRANCH);
       }
     }
-    alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
-    $org = alma_get_organisation();
-    $res = array(
-      'status' => DING_RESERVATION_SUCCESS,
-      'branch' => $org['branch'][$params['pickup_branch']],
-    );
+    $res = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
+    if ($res) {
+      $org = alma_get_organisation();
+      $res = array(
+        'status' => DING_RESERVATION_SUCCESS,
+        'branch' => $org['branch'][$params['pickup_branch']],
+      );
+    }
+    else {
+      $res = array(
+        'status' => DING_RESERVATION_ERROR_NOT_ALLOWED,
+      );
+    }
   }
   else {
     $res = array(

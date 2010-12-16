@@ -89,6 +89,9 @@ class AlmaClient {
           case 'borrCardNotFound':
             throw new AlmaClientBorrCardNotFound('Invalid borrower credentials');
             break;
+          case 'reservationNotFound':
+            throw new AlmaClientReservationNotFound('Reservation not found');
+            break;
           default:
             throw new AlmaClientCommunicationError('Status is not okay: ' . $message);
         }
@@ -435,7 +438,13 @@ class AlmaClient {
       $params['reservationValidTo'] = intval(date('Y', $_SERVER['REQUEST_TIME'])) + 1 . date('-m-d', $_SERVER['REQUEST_TIME']);
     }
 
-    $doc = $this->request('patron/reservations/add', $params);
+    try {
+      $doc = $this->request('patron/reservations/add', $params);
+    }
+    catch (AlmaClientReservationNotFound $e) {
+      return FALSE;
+    }
+
     return TRUE;
   }
 
@@ -921,5 +930,8 @@ class AlmaClientCommunicationError extends Exception {
 
 
 class AlmaClientBorrCardNotFound extends Exception {
+}
+
+class AlmaClientReservationNotFound extends Exception {
 }
 
