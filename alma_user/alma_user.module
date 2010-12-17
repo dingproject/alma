@@ -231,10 +231,10 @@ function alma_user_ding_debt_list_form_pay($form, &$form_state) {
     return;
   }
 
-  $patron = alma_client_invoke('get_patron_info', $creds['borr_card'], $creds['pin_code']);
+  $patron = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password']);
 
   $params = array(
-    'customer_name' => $patron['patron_name'],
+    'customer_name' => $patron['user_name'],
     'customer_address' => $patron['addresses'][0]['street'],
     'customer_address_2' => $patron['addresses'][0]['care_of'],
     'customer_city' => $patron['addresses'][0]['city'],
