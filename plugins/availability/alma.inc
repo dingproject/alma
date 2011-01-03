@@ -63,11 +63,14 @@ function alma_availability_details($provider_ids) {
             $parts[] = $org[$part][$branch_holding[$part . '_id']];
           }
         }
-        $parts = array_filter($parts);
 
         if (!empty($branch_holding['shelf_mark'])) {
-          $parts = array_merge($parts, (array) $branch_holding['shelf_mark']); 
+          // Shelf mark might have leading >, strip any and replace the rest
+          // with the proper arrow.
+          $parts[] = strtr(trim($branch_holding['shelf_mark'], " >\n\t"), '>', '→');
         }
+
+        $parts = array_filter($parts);
 
         if ($parts && $branch_holding['total_count'] > $branch_holding['checked_out_count']) {
           $holding['holdings'][] = join(' → ', $parts);
