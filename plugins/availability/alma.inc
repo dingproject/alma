@@ -67,7 +67,7 @@ function alma_availability_details($provider_ids) {
         if (!empty($branch_holding['shelf_mark'])) {
           // Shelf mark might have leading >, strip any and replace the rest
           // with the proper arrow.
-          $parts[] = strtr(trim($branch_holding['shelf_mark'], " >\n\t"), '>', '→');
+          $parts[] = strtr(trim($branch_holding['shelf_mark'], " >\n\t"), array('>' => '→'));
         }
 
         $parts = array_filter($parts);
