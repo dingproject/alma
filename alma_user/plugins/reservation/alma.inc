@@ -181,11 +181,35 @@ function alma_user_reservation_update($account, $reservation_ids, $options = arr
   }
   $res = array();
   foreach ($reservation_ids as $reservation_id) {
+    $reservation = $reservations[$reservation_id];
+    if (!$reservation) {
+      $res[$reservation_id] = t('Internal error');
+    }
+    $branch_name = $reservation['pickup_branch'];
     // Revert branch name to id.
-    $reservations[$reservation_id]['pickup_branch'] = $reservations[$reservation_id]['pickup_branch_id'];
-    alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $reservations[$reservation_id], $changes);
-    // AlmaClient doesn't check for success, so why should we?
-    $res[$reservation_id] = TRUE;
+    $reservation['pickup_branch'] = $reservation['pickup_branch_id'];
+    if ($reservation['status'] == 'fetchable') {
+      if ((isset($changes['pickup_branch']) && ($changes['pickup_branch'] != $reservation['pickup_branch'])) || (isset($changes['valid_to']) && ($changes['valid_to'] != $reservation['valid_to']))) {
+
+        // Get details so title is filled in.
+        $reservation = alma_user_reservation_details($reservation);
+        if ($reservation['ting_object']) {
+          $reservation['title'] = $reservation['ting_object']->title;
+        }
+
+        if (isset($reservation['title']) and $branch_name) {
+          $res[$reservation_id] = t('You can not perform changes to reservation of !title as the item is ready for pick up at !branch', array('!title' => $reservation['title'], '!branch' => $branch_name));
+        }
+        else {
+          $res[$reservation_id] = t('You can not perform changes to reservations which are ready for pick up');
+        }
+      }
+    }
+    else {
+      alma_client_invoke('change_reservation', $creds['user_id'], $creds['password'], $reservation, $changes);
+      // AlmaClient doesn't check for success, so why should we?
+      $res[$reservation_id] = TRUE;
+    }
   }
   return $res;
 }
