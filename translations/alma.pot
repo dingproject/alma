@@ -4,15 +4,16 @@
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
 #  alma.info: n/a
+#  lib/AlmaClient/AlmaClient.class.php: n/a
+#  alma.module: n/a
 #  plugins/branch/alma.inc: n/a
 #  plugins/availability/alma.inc: n/a
-#  alma.module: n/a
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2010-10-28 13:14+0200\n"
+"POT-Creation-Date: 2011-01-19 14:29+0100\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -33,6 +34,14 @@ msgstr ""
 msgid "Axiell"
 msgstr ""
 
+#: lib/AlmaClient/AlmaClient.class.php:73 alma.module:96
+msgid "alma"
+msgstr ""
+
+#: lib/AlmaClient/AlmaClient.class.php:73
+msgid "Sent request: @url (@seconds s)"
+msgstr ""
+
 #: plugins/branch/alma.inc:11
 msgid "Alma branch plugin"
 msgstr ""
@@ -41,31 +50,31 @@ msgstr ""
 msgid "Alma availability plugin"
 msgstr ""
 
-#: alma.module:163
+#: alma.module:165
 msgid "A couple of days"
 msgstr ""
 
-#: alma.module:176
+#: alma.module:178
 msgid "About a week"
 msgstr ""
 
-#: alma.module:179
+#: alma.module:181
 msgid "About two weeks"
 msgstr ""
 
-#: alma.module:182
+#: alma.module:184
 msgid "About a month"
 msgstr ""
 
-#: alma.module:185
+#: alma.module:187
 msgid "About two months"
 msgstr ""
 
-#: alma.module:188
+#: alma.module:190
 msgid "More than two months"
 msgstr ""
 
-#: alma.module:192
+#: alma.module:194
 msgid "Unknown"
 msgstr ""
 
@@ -73,11 +82,7 @@ msgstr ""
 msgid "The Alma module requires SimpleXML to function. Please install and/or enable SimpleXML in your PHP configuration."
 msgstr ""
 
-#: alma.module:94
-msgid "alma"
-msgstr ""
-
-#: alma.module:94
+#: alma.module:96
 msgid "@method error: “@message”"
 msgstr ""
 

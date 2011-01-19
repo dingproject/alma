@@ -4,10 +4,10 @@
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
 #  alma_user.module: n/a
+#  plugins/loan/alma.inc: n/a
 #  ding_library_user_personal_info.tpl.php: n/a
 #  plugins/reservation/alma.inc: n/a
 #  plugins/debt/alma.inc: n/a
-#  plugins/loan/alma.inc: n/a
 #  plugins/user/alma.inc: n/a
 #  alma_user.info: n/a
 #
@@ -15,7 +15,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2010-10-28 13:14+0200\n"
+"POT-Creation-Date: 2011-01-19 14:29+0100\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -32,68 +32,36 @@ msgstr ""
 msgid "Phone number where the library can contact you. Is not published on the web site."
 msgstr ""
 
-#: alma_user.module:139
-msgid "PIN code length must be a number larger than zero."
-msgstr ""
-
-#: alma_user.module:252
-msgid "Valid to"
-msgstr ""
-
-#: alma_user.module:259
-msgid "New pickup branch"
-msgstr ""
-
-#: alma_user.module:265
-msgid "Save changes for selected reservations"
-msgstr ""
-
-#: alma_user.module:273
-msgid "Delete selected reservations"
-msgstr ""
-
-#: alma_user.module:286
+#: alma_user.module:164
 msgid "You can not change expiry on reservations which are ready for pick up"
 msgstr ""
 
-#: alma_user.module:295
+#: alma_user.module:167
+msgid "You can not change pickup branch on reservations which are ready for pick up"
+msgstr ""
+
+#: alma_user.module:175
 msgid "Invalid date"
 msgstr ""
 
-#: alma_user.module:301
+#: alma_user.module:181
 msgid "Date must be later than today."
 msgstr ""
 
-#: alma_user.module:329
-msgid "Reservations updated."
-msgstr ""
-
-#: alma_user.module:343
-msgid "Reservations deleted."
-msgstr ""
-
-#: alma_user.module:356
-msgid "Not interested after"
-msgstr ""
-
-#: alma_user.module:364
-msgid "Pickup branch"
-msgstr ""
-
-#: alma_user.module:370
-msgid "Reserve selected"
-msgstr ""
-
-#: alma_user.module:389
-msgid "Reservation of “@title” failed. It may be on your reservation list already."
-msgstr ""
-
-#: alma_user.module:426
+#: alma_user.module:217
 msgid "Pay selected"
 msgstr ""
 
-#: alma_user.module:439
+#: alma_user.module:230
 msgid "You must be logged in to pay fines."
+msgstr ""
+
+#: alma_user.module:258 plugins/loan/alma.inc:26;69
+msgid "alma_user"
+msgstr ""
+
+#: alma_user.module:258
+msgid "No session in add payment. Transaction: @transaction"
 msgstr ""
 
 #: ding_library_user_personal_info.tpl.php:10
@@ -124,6 +92,30 @@ msgstr ""
 msgid "Alsa reservations plugin"
 msgstr ""
 
+#: plugins/reservation/alma.inc:129
+msgid "Valid to"
+msgstr ""
+
+#: plugins/reservation/alma.inc:142
+msgid "No change"
+msgstr ""
+
+#: plugins/reservation/alma.inc:149
+msgid "New pickup branch"
+msgstr ""
+
+#: plugins/reservation/alma.inc:186
+msgid "Internal error"
+msgstr ""
+
+#: plugins/reservation/alma.inc:201
+msgid "You can not perform changes to reservation of !title as the item is ready for pick up at !branch"
+msgstr ""
+
+#: plugins/reservation/alma.inc:204
+msgid "You can not perform changes to reservations which are ready for pick up"
+msgstr ""
+
 #: plugins/debt/alma.inc:11
 msgid "Alma debt plugin"
 msgstr ""
@@ -150,10 +142,6 @@ msgstr ""
 
 #: plugins/loan/alma.inc:71
 msgid "Error renewing: internal error"
-msgstr ""
-
-#: plugins/loan/alma.inc:26;69
-msgid "alma_user"
 msgstr ""
 
 #: plugins/loan/alma.inc:26
@@ -188,100 +176,60 @@ msgstr ""
 msgid "Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests"
 msgstr ""
 
-#: plugins/user/alma.inc:96
-msgid "Credential cache duration"
-msgstr ""
-
-#: plugins/user/alma.inc:97
-msgid "Determines how long the user’s library system credentials will be cached for. For the duration of the cache, the user will be able to access his personal information and interact with the library system without having to provide his credentials again."
-msgstr ""
-
-#: plugins/user/alma.inc:99
-msgid "5 minutes"
-msgstr ""
-
-#: plugins/user/alma.inc:100
-msgid "15 minutes"
-msgstr ""
-
-#: plugins/user/alma.inc:101
-msgid "30 minutes"
-msgstr ""
-
-#: plugins/user/alma.inc:102
-msgid "1 hour"
-msgstr ""
-
-#: plugins/user/alma.inc:103
-msgid "3 hours"
-msgstr ""
-
-#: plugins/user/alma.inc:104
-msgid "12 hours"
-msgstr ""
-
-#: plugins/user/alma.inc:105
-msgid "1 day"
-msgstr ""
-
-#: plugins/user/alma.inc:106
-msgid "3 days"
-msgstr ""
-
-#: plugins/user/alma.inc:107
-msgid "7 days"
-msgstr ""
-
-#: plugins/user/alma.inc:128
+#: plugins/user/alma.inc:112
 msgid "Preferred library"
 msgstr ""
 
-#: plugins/user/alma.inc:135
+#: plugins/user/alma.inc:119
 msgid "Period of interest"
 msgstr ""
 
-#: plugins/user/alma.inc:136
+#: plugins/user/alma.inc:120
 msgid "How long are you willing to wait for a reservation?"
 msgstr ""
 
-#: plugins/user/alma.inc:138
+#: plugins/user/alma.inc:122
 msgid "A month"
 msgstr ""
 
-#: plugins/user/alma.inc:139
+#: plugins/user/alma.inc:123
 msgid "Two months"
 msgstr ""
 
-#: plugins/user/alma.inc:140
+#: plugins/user/alma.inc:124
 msgid "Three months"
 msgstr ""
 
-#: plugins/user/alma.inc:141
+#: plugins/user/alma.inc:125
 msgid "Six months"
 msgstr ""
 
-#: plugins/user/alma.inc:142
+#: plugins/user/alma.inc:126
 msgid "A year"
 msgstr ""
 
-#: plugins/user/alma.inc:149
+#: plugins/user/alma.inc:133
 msgid "Suspend reservations from"
 msgstr ""
 
-#: plugins/user/alma.inc:156
+#: plugins/user/alma.inc:140
 msgid "To"
 msgstr ""
 
-#: plugins/user/alma.inc:163
+#: plugins/user/alma.inc:147
 msgid "Update"
 msgstr ""
 
-#: plugins/user/alma.inc:179
+#: plugins/user/alma.inc:163
 msgid "Start date must later than today"
 msgstr ""
 
-#: plugins/user/alma.inc:183
+#: plugins/user/alma.inc:167
 msgid "Start date must be before end date"
+msgstr ""
+
+#: plugins/user/alma.inc:218
+msgid "Changes saved."
 msgstr ""
 
 #: alma_user.info:0
