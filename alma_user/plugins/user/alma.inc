@@ -91,6 +91,33 @@ function alma_user_user_settings_form() {
     '#description' => t('Logs requests to the Alma webservice. Sensitive information such as CPR number and PIN code is stripped from the requests'),
   );
 
+  $form['cache_methods'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Caching'),
+    '#description' => t('Individual backend methods may be cached for performance.'),
+  );
+
+  $cached_methods = _alma_cached_methods();
+  foreach ($cached_methods as $name => $title) {
+    $form['cache_methods']['alma_' . $name . '_expire'] = array(
+    '#type' => 'select',
+    '#title' => $title,
+    '#options' => array(
+      0 => t('No caching'),
+      300 => t('5 minutes'),
+      900 => t('15 minutes'),
+      1800 => t('30 minutes'),
+      3600 => t('1 hour'),
+      10800 => t('3 hours'),
+      43200 => t('12 hours'),
+      86400 => t('1 day'),
+      259200 => t('3 days'),
+      604800 => t('7 days'),
+    ),
+    '#default_value' => variable_get('alma_' . $name . '_expire', 0),
+    );
+  }
+
   return system_settings_form($form);
 }
 

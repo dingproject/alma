@@ -61,6 +61,21 @@ function alma_client() {
 }
 
 /**
+ * Returns a list of cache candidate methods.
+ */
+function _alma_cached_methods() {
+  static $methods;
+  if (!$methods) {
+    $methods = array(
+      'get_reservation_branches' => t('Reservation branch list'),
+      'catalogue_record_detail' => t('Catalogue record details'),
+      'get_availability' => t('Availability data'),
+    );
+  }
+  return $methods;
+}
+
+/**
  * Calls the Alma backend, possibly caching the result.
  *
  * @param $method
@@ -79,7 +94,8 @@ function alma_client_invoke($method) {
   );
   $args = func_get_args();
   array_shift($args); // Lose the method.
-  if (isset($cached_methods[$method])) {
+  $expire = variable_get('alma_' . $method . '_expire', 0);
+  if ($expire) {
     // Return data from cache if available.
     $cid = 'alma:' . $method . ":" . md5(serialize($args));
     $cache = cache_get($cid, 'cache_alma_requests');
@@ -98,7 +114,7 @@ function alma_client_invoke($method) {
   }
 
   if (isset($cid) && $result) {
-    cache_set($cid, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + $cached_methods[$method]);
+    cache_set($cid, $result, 'cache_alma_requests', $_SERVER['REQUEST_TIME'] + $expire);
   }
 
   return $result;
