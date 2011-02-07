@@ -67,7 +67,25 @@ function alma_user_user_authenticate($name, $pass) {
     $return['user']['auth_mail'] = $info['mails'][0]['mail'];
   }
 
+  // Set preferred branch from alam (used to check if the drupal user should be updated).
+  if (isset($info['preferences']['patron_branch'])) {
+    $return['user']['alma_preferred_branch'] = $info['preferences']['patron_branch'];
+  }
+
   return $return;
+}
+
+/**
+ * Updated the users preferred branch (in drupal), if the branch have been
+ * change in the library system.
+ *
+ */
+function alma_user_user_authenticate_finalize($user) {
+  if ((isset($user->alma_preferred_branch) && !empty($user->alma_preferred_branch)) &&
+      $user->preferred_branch != $user->alma_preferred_branch) {
+    user_save($user, array('preferred_branch' => $user->alma_preferred_branch));
+    $user->preferred_branch = $user->alma_preferred_branch;
+  }
 }
 
 /**
