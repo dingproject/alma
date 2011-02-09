@@ -40,7 +40,7 @@ function alma_user_user_authenticate($name, $pass) {
   $info = alma_client_invoke('get_patron_info', $name, $pass, TRUE);
   if (!$info) {
     // Not found.
-    return;
+    return array('result' => FALSE);
   }
 
   if (isset($info['blocks']) && !empty($info['blocks'])) {
