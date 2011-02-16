@@ -55,7 +55,13 @@ function alma_client() {
     // How the hell it can be possible that we include this twice, I
     // don't know, but I've seen it happen on the user page.
     require_once($path . '/lib/AlmaClient/AlmaClient.class.php');
-    $client = new AlmaClient(variable_get('alma_base_url', ''));
+    try {
+      $client = new AlmaClient(variable_get('alma_base_url', ''));
+    }
+    catch (Exception $e) {
+      watchdog('alma', 'Error instantiating AlmaClient: “@message”', array('@method' => $method, '@message' => $e->getMessage(), WATCHDOG_ERROR));
+      return NULL;
+    }
   }
   return $client;
 }
@@ -104,6 +110,10 @@ function alma_client_invoke($method) {
     }
   }
   $client = alma_client();
+  if (!$client) {
+    // Not much we can do.
+    return;
+  }
 
   try {
     $result = call_user_func_array(array($client, $method), $args);
