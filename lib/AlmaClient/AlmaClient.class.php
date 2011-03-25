@@ -66,11 +66,14 @@ class AlmaClient {
     // logging and logging preferences out.
     if (variable_get('alma_enable_logging', FALSE)) {
     	$seconds = floatval(($stopTime[1]+$stopTime[0]) - ($startTime[1]+$startTime[0]));
-
-      $log_params = self::filter_request_params($params);
+      
+      // Filter params to avoid logging sensitive data. 
+      // This can be disabled by setting alma_logging_filter_params = 0. There is no UI for setting this variable
+      // It is intended for settings.php in development environments only.
+      $params = (variable_get('alma_logging_filter_params', 1)) ? self::filter_request_params($params) : $params;
 
       // Log the request
-      watchdog('alma', 'Sent request: @url (@seconds s)', array('@url' => url($this->base_url . $method, array('query' => $log_params)), '@seconds' => $seconds), WATCHDOG_DEBUG);
+      watchdog('alma', 'Sent request: @url (@seconds s)', array('@url' => url($this->base_url . $method, array('query' => $params)), '@seconds' => $seconds), WATCHDOG_DEBUG);
     }
 
     if ($request->code == 200) {
