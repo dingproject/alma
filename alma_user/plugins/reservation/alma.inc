@@ -24,7 +24,7 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
     }
 
     $params = array(
-      'id'            => utf8_decode($item_id),
+      'id'            => $item_id,
       'valid_from'    => date('Y-m-d'),
       'valid_to'      => isset($options['expiry']) ? alma_format_date($options['expiry']) : alma_format_date($_SERVER['REQUEST_TIME'] + ($interest_period * 86400)),
     );
