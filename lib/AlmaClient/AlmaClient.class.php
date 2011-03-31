@@ -336,6 +336,10 @@ class AlmaClient {
         'record_available' => $item->getElementsByTagName('catalogueRecord')->item(0)->getAttribute('isAvailable'),
       );
 
+      if ($note = $item->getElementsByTagName('note')->item(0)) {
+        $reservation['notes'] = $note->getAttribute('value');
+      }
+
       if ($reservation['status'] == 'fetchable') {
         $reservation['pickup_number'] = (integer) $item->getAttribute('pickUpNo');
         $reservation['pickup_expire_date'] = $item->getAttribute('pickUpExpireDate');
