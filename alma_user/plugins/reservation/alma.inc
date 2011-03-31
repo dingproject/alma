@@ -84,10 +84,15 @@ function alma_user_reservation_list($user) {
 function alma_user_reservation_details($reservation) {
   $cache = &ctools_static(__FUNCTION__, array());
   if (!isset($cache[$reservation['id']])) {
-    if ($reservation['record_id'] and $object = ting_get_object_by_local_id($reservation['record_id'])) {
+    $object = ting_get_object_by_local_id($reservation['record_id']);
+    if ($object) {
       $reservation['ting_object'] = $object;
-    }
-    else {
+      if (ting_object_is($object, 'periodical')) {
+        //Reservations of periodicals contain information regarding year and volume which should be 
+        //included in the reservation title, so we specify a title along with the object
+        $reservation['title'] = check_plain($object->title).', '.$reservation['notes'];
+      }
+    } else {
       $data = alma_client_invoke('catalogue_record_detail', $reservation['record_id']);
       $details = $data['records'][$reservation['record_id']];
       $reservation['title'] = $details['titles'][0];
