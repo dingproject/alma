@@ -1,16 +1,15 @@
 <?php
+/**
+ * @file
+ * Provides a client for the Axiell Alma library information webservice.
+ */
 
 define('ALMA_SERVICE_TYPE_DUE_DATE_ALERT', 'dueDateAlert');
 define('ALMA_SERVICE_TYPE_LIBRARY_MESSAGE', 'libraryMessage');
 define('ALMA_SERVICE_TYPE_OVERDUE_NOTICE', 'overdueNotice');
 define('ALMA_SERVICE_TYPE_PICK_UP_NOTICE', 'pickUpNotice');
-
 define('ALMA_SERVICE_METHOD_SMS', 'sms');
 
-/**
- * @file AlmaClient.php
- * Provides a client for the Axiell Alma library information webservice.
- */
 class AlmaClient {
   /**
    * @var AlmaClientBaseURL

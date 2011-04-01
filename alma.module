@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file alma.module
  * Drupal module implementing Axiell ABs Alma API.
