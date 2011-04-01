@@ -43,7 +43,7 @@ function alma_user_user_authenticate($name, $pass) {
   if (isset($info['blocks']) && !empty($info['blocks'])) {
     $block_codes = alma_user_block_codes();
     foreach ($info['blocks'] as $block) {
-      $return['messages'][] = array(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
+      drupal_set_message(t('Your account is blocked: %message.', array('%message' => $block_codes[$block['code']])), 'warning');
     }
   }
 
