@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 define('ALMA_SERVICE_TYPE_DUE_DATE_ALERT', 'dueDateAlert');
 define('ALMA_SERVICE_TYPE_LIBRARY_MESSAGE', 'libraryMessage');

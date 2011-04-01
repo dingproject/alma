@@ -1,4 +1,3 @@
-; $Id$
 name = Axiell Alma
 description = Implementation of Axiell's Alma API for their library system.
 package = Axiell

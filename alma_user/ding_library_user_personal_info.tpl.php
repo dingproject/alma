@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file alma_user_personal_info.tpl.php
