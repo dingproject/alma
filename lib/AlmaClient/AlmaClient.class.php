@@ -36,7 +36,7 @@ class AlmaClient {
       throw new Exception('Invalid base URL: ' . $base_url);
     }
 
-    self::$salt = rand();
+    self::$salt = mt_rand();
   }
 
   /**
