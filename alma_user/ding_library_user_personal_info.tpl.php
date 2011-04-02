@@ -1,8 +1,7 @@
 <?php
-
 /**
- * @file alma_user_personal_info.tpl.php
- * Template for rendering a user's library user profile.
+ * @file
+ * Template for rendering a user's library user personal information.
  */
 ?>
 <div class="vcard">

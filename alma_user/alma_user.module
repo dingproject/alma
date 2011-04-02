@@ -182,25 +182,19 @@ function alma_user_element_validate_reservation_options(&$element, &$form_state,
 }
 
 /**
+ * Preprocess the variables for the personal info template.
  *
+ * Extracts the data provided by Alma into print-ready variables.
  */
 function alma_user_preprocess_ding_library_user_personal_info(&$vars) {
-  // Using a cache, as panels causes this to be called twice.
-  static $info_cache;
-  $creds = ding_library_user_get_credentials($vars['account']);
+  $info = $vars['library_user_data'];
 
-  if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
-    if (!isset($info_cache[$vars['account']->uid])) {
-      $info_cache[$vars['account']->uid] = alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
-    }
-    $info = $info_cache[$vars['account']->uid];
-    $fields = array('street', 'postal_code', 'city');
-    foreach ($fields as $field) {
-      $vars[$field] = $info['addresses'][0][$field] ? check_plain($info['addresses'][0][$field]) : '';
-    }
-
-    $vars['phone'] = $info['phones'][0]['phone'] ? check_plain($info['phones'][0]['phone']) : '';
+  $fields = array('street', 'postal_code', 'city');
+  foreach ($fields as $field) {
+    $vars[$field] = $info['addresses'][0][$field] ? check_plain($info['addresses'][0][$field]) : '';
   }
+
+  $vars['phone'] = $info['phones'][0]['phone'] ? check_plain($info['phones'][0]['phone']) : '';
 }
 
 // Debt related functions
