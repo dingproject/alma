@@ -443,6 +443,13 @@ class AlmaClient {
 
     try {
       $doc = $this->request('patron/reservations/add', $params);
+      $res_status = $doc->getElementsByTagName('reservationStatus')->item(0)->getAttribute('value');
+      $res_message = $doc->getElementsByTagName('reservationStatus')->item(0)->getAttribute('key');
+
+      // General catchall if status is not okay is to report failure.
+      if ($res_status == 'reservationNotOk') {
+        return FALSE;
+      }
     }
     catch (AlmaClientReservationNotFound $e) {
       return FALSE;

@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * @file
  * Ding reservations plugin.
