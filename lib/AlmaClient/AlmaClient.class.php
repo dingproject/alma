@@ -75,7 +75,7 @@ class AlmaClient {
     }
 
     if ($request->code == 200) {
-      // Since we currently have no neat for the more advanced stuff
+      // Since we currently have no need for the more advanced stuff
       // SimpleXML provides, we'll just use DOM, since that is a lot
       // faster in most cases.
       $doc = new DOMDocument();
