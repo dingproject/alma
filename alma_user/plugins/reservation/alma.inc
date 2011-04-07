@@ -37,6 +37,13 @@ function alma_user_reservation_create($account, $item_id, $options = array()) {
       }
     }
     $res = alma_client_invoke('add_reservation', $creds['user_id'], $creds['password'], $params);
+
+    if ($res == DING_PROVIDER_AUTH_BLOCKED) {
+      return array(
+        'status' => DING_PROVIDER_AUTH_BLOCKED,
+      );
+    }
+
     if ($res) {
       $org = alma_get_organisation();
       $res = array(

@@ -446,6 +446,11 @@ class AlmaClient {
       $res_status = $doc->getElementsByTagName('reservationStatus')->item(0)->getAttribute('value');
       $res_message = $doc->getElementsByTagName('reservationStatus')->item(0)->getAttribute('key');
 
+      // Return error code when patron is blocked.
+      if ($res_message == 'reservationPatronBlocked') {
+        return DING_PROVIDER_AUTH_BLOCKED;
+      }
+
       // General catchall if status is not okay is to report failure.
       if ($res_status == 'reservationNotOk') {
         return FALSE;
