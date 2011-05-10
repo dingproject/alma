@@ -514,8 +514,33 @@ class AlmaClient {
       'pinCode' => $pin_code,
       'loans' => (is_array($loan_ids)) ? join(',', $loan_ids) : $loan_ids,
     );
+
     $doc = $this->request('patron/loans/renew', $params);
-    return TRUE;
+    
+    //Built return array as specified by Ding loan provider.
+    //See ding_provider_example_loan_renew_loans().
+    $reservations = array();
+    foreach ($doc->getElementsByTagName('loan') as $loan) {
+      $id = $loan->getAttribute('id');
+      if (in_array($id, $loan_ids)) {
+        if ($renewable = $loan->getElementsByTagName('loanIsRenewable')->item(0)) {
+          $message = $renewable->getAttribute('message');
+          $renewable = $renewable->getAttribute('value');
+          //If message is "isRenewedToday" we assumme that the renewal is successful.
+          //Even if this is not the case any error in the current renewal is irrelevant
+          //as the loan has previously been renewed so don't report it as such
+          if ($message == 'isRenewedToday') {
+            $reservations[$id] = TRUE; 
+          } elseif ($message == 'maxNofRenewals') {
+            $reservations[$id] = t('Maximum number of renewals reached'); 
+          } elseif (!$renewable) {
+            $reservations[$id] = t('Unable to renew material');
+          }
+        }
+      }
+    }
+    
+    return $reservations;
   }
 
   /**

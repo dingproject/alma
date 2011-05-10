@@ -7,7 +7,7 @@
  */
 
 $plugin = array(
-  'description' => t('Alsa loan plugin'),
+  'description' => t('Alma loan plugin'),
   'version' => 1,
 );
 
@@ -59,11 +59,8 @@ function alma_user_loan_renew_loans($account, $loan_ids) {
     return $creds;
   }
   try {
-    $res = alma_client_invoke('renew_loan', $creds['user_id'], $creds['password'], $loan_ids);
-    if ($res) {
-      // Seemed to work...
-      return array();
-    }
+    //Return value from Alma client matches Ding provider specification so just return it
+    return alma_client_invoke('renew_loan', $creds['user_id'], $creds['password'], $loan_ids);
   }
   catch (Exception $e) {
     watchdog('alma_user', 'renew_loan error: “@message”', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
