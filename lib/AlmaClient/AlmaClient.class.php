@@ -365,7 +365,7 @@ class AlmaClient {
     $loans = array();
     foreach ($doc->getElementsByTagName('loan') as $item) {
       $id = $item->getAttribute('id');
-      $loans[$id] = array(
+      $loan = array(
         'id' => $id,
         'branch' => $item->getAttribute('loanBranch'),
         'loan_date' => $item->getAttribute('loanDate'),
@@ -374,6 +374,10 @@ class AlmaClient {
         'record_id' => $item->getElementsByTagName('catalogueRecord')->item(0)->getAttribute('id'),
         'record_available' => $item->getElementsByTagName('catalogueRecord')->item(0)->getAttribute('isAvailable'),
       );
+      if ($item->getElementsByTagName('note')->length > 0) {
+        $loan['notes'] = $item->getElementsByTagName('note')->item(0)->getAttribute('value');
+      }
+      $loans[$id] = $loan;
     }
     uasort($loans, 'AlmaClient::loan_sort');
     return $loans;

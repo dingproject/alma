@@ -35,6 +35,12 @@ function alma_user_loan_details($loan) {
     $loan['materials_number'] = $loan['record_id'];
     if ($object = ting_get_object_by_local_id($loan['record_id'])) {
       $loan['ting_object'] = $object;
+      if (ting_object_is($object, 'periodical')) {
+        //Loans of periodicals contain information regarding year and volume 
+        //on the notes. This should be included in the loan title for the user
+        //to see, so we specify a title along with the object
+        $loan['title'] = check_plain($object->title).', '.$loan['notes'];
+      }
     }
     else {
       $data = alma_client_invoke('catalogue_record_detail', $loan['record_id']);
