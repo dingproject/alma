@@ -153,7 +153,9 @@ function alma_user_reservation_options($account, $create = TRUE) {
       '' => t("No change"),
     );
   }
-  $branches += alma_client_invoke('get_reservation_branches');
+  if ($alma_branches = alma_client_invoke('get_reservation_branches')) {
+    $branches += $alma_branches;
+  }
 
   $form['pickup_branch'] = array(
     '#type' => 'select',
