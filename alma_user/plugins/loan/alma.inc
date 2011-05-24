@@ -32,7 +32,7 @@ function alma_user_loan_get_loans($account, $redirect = FALSE) {
 function alma_user_loan_details($loan) {
   $cache = &ctools_static(__FUNCTION__, array());
   if (!isset($cache[$loan['id']])) {
-    $loan['materials_number'] = $loan['record_id'];
+    $loan['materials_number'] = $loan['id'];
     if ($object = ting_get_object_by_local_id($loan['record_id'])) {
       $loan['ting_object'] = $object;
       if (ting_object_is($object, 'periodical')) {
