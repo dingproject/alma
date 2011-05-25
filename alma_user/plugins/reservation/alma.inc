@@ -13,7 +13,7 @@ $plugin = array(
 function alma_user_reservation_create($account, $item_id, $options = array()) {
   $creds = ding_library_user_get_credentials($account);
 
-  $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
+  $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ding_reservation_default_interest_period();
 
   if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
     if (alma_user_reservation_exists($account, $item_id)) {
@@ -94,7 +94,7 @@ function alma_user_reservation_details($reservation) {
     if ($object) {
       $reservation['ting_object'] = $object;
       if (ting_object_is($object, 'periodical')) {
-        //Reservations of periodicals contain information regarding year and volume which should be 
+        //Reservations of periodicals contain information regarding year and volume which should be
         //included in the reservation title, so we specify a title along with the object
         $reservation['title'] = check_plain($object->title).', '.$reservation['notes'];
       }
@@ -143,7 +143,7 @@ function alma_user_reservation_options($account, $create = TRUE) {
   );
 
   if ($create) {
-    $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
+    $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ding_reservation_default_interest_period();
     $form['expiry']['#default_value'] = date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400);
   }
 
@@ -161,7 +161,7 @@ function alma_user_reservation_options($account, $create = TRUE) {
     '#type' => 'select',
     '#title' => t('New pickup branch'),
     '#options' => $branches,
-    '#default_value' => (isset($account->preferred_branch)) ? $account->preferred_branch : NULL, 
+    '#default_value' => (isset($account->preferred_branch)) ? $account->preferred_branch : NULL,
   );
 
   if ($create) {

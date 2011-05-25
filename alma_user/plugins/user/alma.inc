@@ -167,7 +167,7 @@ function alma_user_user_library_settings_form(&$form_state, $account) {
       '183'        => t('Six months'),
       '365'        => t('A year'),
     ),
-    '#default_value' => (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_RESERVATION_DEFAULT_INTEREST_PERIOD,
+    '#default_value' => (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ding_reservation_default_interest_period(),
   );
 
   $form['suspend_start'] = array(
