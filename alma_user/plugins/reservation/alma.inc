@@ -16,7 +16,7 @@ $plugin = array(
 function alma_user_reservation_create($account, $item_id, $options = array()) {
   $creds = ding_library_user_get_credentials($account);
 
-  $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
+  $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ding_reservation_default_interest_period();
 
   if ($creds != DING_PROVIDER_AUTH_REQUIRED) {
     if (alma_user_reservation_exists($account, $item_id)) {
@@ -132,7 +132,7 @@ function alma_user_reservation_options($account, $create = TRUE) {
   );
 
   if ($create) {
-    $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : DING_LIBRARY_USER_DEFAULT_INTEREST_PERIOD;
+    $interest_period = (isset($account->interest_period) && $account->interest_period > 10) ? $account->interest_period : ding_reservation_default_interest_period();
     $form['expiry']['#default_value'] = date('Y-m-d', $_SERVER['REQUEST_TIME'] + $interest_period * 86400);
   }
 
