@@ -30,7 +30,7 @@ function alma_availability_details($provider_ids) {
 
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
   $details = alma_client_invoke('catalogue_record_detail', $ids);
-  	
+
   $org = alma_get_organisation();
   $result = array();
   if ($details && isset($details['records'])) {
@@ -93,8 +93,8 @@ function alma_availability_periodical($provider_ids) {
 
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
   $details = alma_client_invoke('catalogue_record_detail', $ids);
-  $status = array('availableForLoan', 'checkedOut', 'periodical', 'inAcquisition', 'ordered', 'openLoan');
-	
+  $reservable_statuses = array('availableForLoan', 'checkedOut', 'periodical', 'inAcquisition', 'ordered', 'openLoan');
+
   $result = array();
   if ($details && isset($details['records'])) {
     foreach ($details['records'] as $alma_id => $record) {
@@ -119,7 +119,7 @@ function alma_availability_periodical($provider_ids) {
           );
           $issue['reservable'] = FALSE;
           foreach ($issue_holdings as $issue_holding) {
-            if ( in_array($issue_holding['status'], $status) ) {
+            if (in_array($issue_holding['status'], $reservable_statuses)) {
               $issue['reservable'] = TRUE;
               break;
             }
