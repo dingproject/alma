@@ -93,7 +93,7 @@ function alma_availability_periodical($provider_ids) {
 
   $holding_parts = array('branch', 'department', 'location', 'sublocation', 'collection');
   $details = alma_client_invoke('catalogue_record_detail', $ids);
-  $reservable_statuses = array('availableForLoan', 'checkedOut', 'periodical', 'inAcquisition', 'ordered', 'openLoan');
+  $reservable_statuses = array('availableForLoan', 'checkedOut');
 
   $result = array();
   if ($details && isset($details['records'])) {
