@@ -8,6 +8,7 @@ $plugin = array(
   'description' => t('ALMA user provider'),
   // Version compatibility.
   'version' => 1,
+  'personal_info' => 'alma_user_personal_info'
 );
 
 /**
@@ -270,4 +271,16 @@ function alma_user_user_password_change($account, $new_password) {
   }
 
   return alma_client_invoke('change_pin', $creds['user_id'], $creds['password'], $new_password);
+}
+
+/**
+ * Provide information about the current user.
+ */
+function alma_user_personal_info($account) {
+  $creds = ding_library_user_get_credentials($account);
+  if ($creds == DING_PROVIDER_AUTH_REQUIRED) {
+    return $creds;
+  }
+
+  return alma_client_invoke('get_patron_info', $creds['user_id'], $creds['password'], TRUE);
 }
