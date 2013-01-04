@@ -250,6 +250,6 @@ function alma_user_debt_dibs_add_payment($transaction) {
     watchdog('alma_user', 'No session in add payment. Transaction: @transaction', array('@transaction' => print_r($transaction, TRUE)), WATCHDOG_EMERG);
   }
   else {
-    alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+    alma_client_invoke('add_payment', implode(',', array_filter($transaction['params']['selected_debts'])), $transaction['payment_order_id']);
   }
 }
