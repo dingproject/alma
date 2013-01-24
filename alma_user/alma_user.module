@@ -249,5 +249,5 @@ function alma_user_ding_debt_list_form_pay($form, &$form_state) {
  *   Transaction array as provided by DIBS.
  */
 function alma_user_debt_dibs_add_payment($transaction) {
-  alma_client_invoke('add_payment', implode(',', $transaction['params']['selected_debts']), $transaction['payment_order_id']);
+  alma_client_invoke('add_payment', implode(',', array_filter($transaction['params']['selected_debts'])), $transaction['payment_order_id']);
 }
